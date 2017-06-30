@@ -1,7 +1,6 @@
 """ handles authenticating a user, or creating/deleting a new user """
 from user.models import Users
 from secrets import token_hex
-from datetime import datetime
 from random import random
 import json
 
@@ -9,13 +8,63 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest, JsonResponse
 from django.core.signing import Signer
 from django.db import IntegrityError
+from django.utils import timezone
 from django.views import View
+
 
 
 class AuthUserLogin(View):
     """ authenticate a users login request """
+
+    def verify_user_password(self, user: Users, pass_check: str)-> bool:
+        user_pass_hash = user.password_hash
+        signer = Signer(salt=user.salt_hash)
+        challenge_hash = signer.signature(pass_check)
+
+        return user_pass_hash == challenge_hash
+
     def post(self, request: HttpRequest):
-        pass
+        resp = JsonResponse({})
+
+        try:
+            request_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            resp.content = json.dumps({
+                "message": "request decode error, bad data sent to the server"
+                })
+            resp.status_code = 400
+            return resp
+
+        try:
+            user = Users.objects.get(user_name__exact=request_json.get('username'))
+        except ObjectDoesNotExist:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                "message": "user {} is not found".format(request_json.get('username'))
+            })
+            return resp
+
+        if self.verify_user_password(user, request_json.get('password')):
+            user.last_login_date = timezone.now()
+            request.session['user_id'] = user.user_id
+
+            user.save()
+        else:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                "message": "username {}, or password {} is incorrect".format(
+                    request_json.get('username'),
+                    request_json.get('password')
+                )
+            })
+            return resp
+
+        resp.status_code = 200
+        resp.content = json.dumps({
+            "message": "user is logged in",
+            "user_id": user.user_id
+        })
+        return resp
 
 
 class AuthUserCreate(View):
@@ -36,7 +85,9 @@ class AuthUserCreate(View):
         try:
             request_json = json.loads(request.body.decode('UTF-8'))
         except json.JSONDecodeError:
-            resp.content = json.dumps({"message": "request decode error, bad data sent to the server"})
+            resp.content = json.dumps({
+                "message": "request decode error, bad data sent to the server"
+                })
             resp.status_code = 400
             return resp
 
@@ -77,7 +128,7 @@ class AuthUserCreate(View):
             new_user.password_hash = signer.signature(_password)
             new_user.email = request_json.get('email', '{}@noemail.set'.format(_user_name))
             new_user.about = request_json.get('about', '')
-            new_user.last_login_date = datetime.now()
+            new_user.last_login_date = timezone.now()
 
             try:
                 new_user.save()
@@ -101,6 +152,7 @@ class AuthUserCreate(View):
             })
         resp.status_code = 200
         return resp
+
 
 
 class AuthUserDelete(View):
