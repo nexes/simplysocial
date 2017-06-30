@@ -126,3 +126,61 @@ class CreateUserTestCase(TestCase):
         print('\tdup_new_user: status_code = {}: {}'.format(resp.status_code, resp.json()['message']))
         self.assertNotEqual(resp.status_code, 200)
         self.assertContains(resp, 'username mmouse is already taken', status_code=400)
+
+
+class DeleteUserTestCase(TestCase):
+    def _create_user(self, username: str, password: str):
+        salt = 'blahj3245fj349feiblah123'
+        signer = Signer(salt=salt)
+
+        user = Users()
+        user.user_id = 324
+        user.first_name = 'Billy'
+        user.last_name = 'Bob test'
+        user.user_name = username
+        user.last_login_date = timezone.now()
+        user.password_hash = signer.signature(password)
+        user.salt_hash = salt
+        user.save()
+
+        return user
+
+    def _create_json_request(self, data: json):
+        resp = self.client.post(
+            '/snaplife/api/auth/user/delete/',
+            json.dumps(data),
+            content_type='application/json'
+        )
+        return resp
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.client = Client()
+
+    def test_delete_user(self):
+        """ make sure a user is deleted when the username and password is correct """
+        self._create_user('tTester', 'password123')
+        resp = self._create_json_request({'username': 'tTester', 'password':'password123'})
+
+        print('\tdelete_user: status_code = {}: {}'.format(resp.status_code, resp.json()['message']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'user deleted', status_code=200)
+
+    def test_delete_wrong_password(self):
+        """ make sure nothing is deleted when wrong password is given """
+        self._create_user('tTester', 'password123')
+        resp = self._create_json_request({'username': 'tTester', 'password':'wrongPass123'})
+
+        print('\tdelete_wrong_password: status_code = {}: {}'.format(resp.status_code, resp.json()['message']))
+        self.assertEqual(resp.status_code, 400)
+        self.assertContains(resp, 'is incorrect', status_code=400)
+
+    def test_delete_wrong_username(self):
+        """ make sure nothing is deleted when wrong username is given """
+        self._create_user('tTester', 'password123')
+        resp = self._create_json_request({'username': 'sBradly', 'password':'password123'})
+
+        print('\tdelete_wrong_username: status_code = {}: {}'.format(resp.status_code, resp.json()['message']))
+        self.assertEqual(resp.status_code, 400)
+        self.assertContains(resp, 'is not found', status_code=400)

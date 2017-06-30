@@ -16,9 +16,9 @@ from django.views import View
 class AuthUserLogin(View):
     """ authenticate a users login request """
 
-    def verify_user_password(self, user: Users, pass_check: str)-> bool:
-        user_pass_hash = user.password_hash
+    def _verify_user_password(self, user: Users, pass_check: str)-> bool:
         signer = Signer(salt=user.salt_hash)
+        user_pass_hash = user.password_hash
         challenge_hash = signer.signature(pass_check)
 
         return user_pass_hash == challenge_hash
@@ -44,7 +44,7 @@ class AuthUserLogin(View):
             })
             return resp
 
-        if self.verify_user_password(user, request_json.get('password')):
+        if self._verify_user_password(user, request_json.get('password')):
             user.last_login_date = timezone.now()
             request.session['user_id'] = user.user_id
 
@@ -156,6 +156,50 @@ class AuthUserCreate(View):
 
 
 class AuthUserDelete(View):
-    """ authenticate a users delete request """
+    """ authenticate a users delete request, make them type in their password """
+    def _verify_user_password(self, user: Users, pass_check: str)-> bool:
+        signer = Signer(salt=user.salt_hash)
+        user_pass_hash = user.password_hash
+        challenge_hash = signer.signature(pass_check)
+
+        return user_pass_hash == challenge_hash
+
     def post(self, request: HttpRequest):
-        pass
+        resp = JsonResponse({})
+
+        try:
+            resp_json = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            resp.content = json.dumps({
+                "message": "request decode error, bad data sent to the server"
+                })
+            resp.status_code = 400
+            return resp
+
+        try:
+            user = Users.objects.get(user_name__exact=resp_json['username'])
+        except ObjectDoesNotExist:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                "message": "user {} is not found".format(resp_json['username'])
+            })
+            return resp
+
+        if self._verify_user_password(user, resp_json['password']):
+            user.delete()
+        else:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                "message": "username {}, or password {} is incorrect".format(
+                    resp_json.get('username'),
+                    resp_json.get('password')
+                )
+            })
+            return resp
+
+        resp.status_code = 200
+        resp.content = json.dumps({
+            "message": "user deleted",
+            "user_id": user.user_id
+        })
+        return resp
