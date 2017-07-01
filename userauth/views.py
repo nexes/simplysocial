@@ -14,7 +14,13 @@ from django.views import View
 
 
 class AuthUserLogin(View):
-    """ authenticate a users login request """
+    """ authenticate a users login request:
+        method = POST: required json object {
+            'username': 'the username',
+            'password': 'the password'
+        }
+        sucessfull login will return the users_id, this is needed for other requestes.
+    """
 
     def _verify_user_password(self, user: Users, pass_check: str)-> bool:
         signer = Signer(salt=user.salt_hash)
@@ -67,12 +73,24 @@ class AuthUserLogin(View):
         return resp
 
 
+class AuthUserLogoff(View):
+    pass
+
+
 class AuthUserCreate(View):
-    """ create a new user """
+    """ create a new user
+        method = POST: required json object {
+            'username': 'the username <required: needs to be unique>',
+            'password': 'the password <required>',
+            'firstname': 'the first name <required>',
+            'lastname': 'the last name <required>',
+            'email': 'the email <optional>',
+            'about': 'about text <optional>
+        }
+        sucessfull creation will return the user_id of the new user.
+    """
     def check_required_inputs(self, items: [str]):
-        """ check if each item passed is both not empty and the correct length,
-            if one item doesn't meet the requirements the functions throws an error
-        """
+        """ check if each item passed is both not empty and the correct length """
         for item in items:
             count = len(item)
             if count == 0 or count > 40:
@@ -93,8 +111,8 @@ class AuthUserCreate(View):
 
         #these are required keys
         _user_name = request_json.get('username')
-        _last_name = request_json.get('lastname')
         _first_name = request_json.get('firstname')
+        _last_name = request_json.get('lastname')
         _password = request_json.get('password')
 
         try:
@@ -102,7 +120,6 @@ class AuthUserCreate(View):
                 _user_name,
                 _first_name,
                 _last_name,
-                _user_name,
                 _password
             ])
         except ValueError as err:
@@ -156,7 +173,13 @@ class AuthUserCreate(View):
 
 
 class AuthUserDelete(View):
-    """ authenticate a users delete request, make them type in their password """
+    """ authenticate a users delete request, make them type in their password
+        method = POST: required json object {
+            'username': 'the username',
+            'password': 'the password'
+        }
+        sucessfull deletion will return the user_id of the removed user.
+    """
     def _verify_user_password(self, user: Users, pass_check: str)-> bool:
         signer = Signer(salt=user.salt_hash)
         user_pass_hash = user.password_hash

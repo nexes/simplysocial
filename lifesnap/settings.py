@@ -33,6 +33,7 @@ with open('supertopsecretprivatesettings.json') as f:
         DEBUG = SETTINGS['DEBUG']
         ALLOWED_HOSTS = SETTINGS['ALLOWED_HOSTS']
 
+
 # Application definition
 
 INSTALLED_APPS = [
