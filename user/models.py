@@ -14,7 +14,7 @@ class Users(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     last_login_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
-    about = models.CharField(max_length=100, blank=True)
+    about = models.CharField(max_length=255, blank=True)
     # profile_pic
     # friends_id = many to many key
 
