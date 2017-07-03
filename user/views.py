@@ -39,14 +39,62 @@ class UserCounts(View):
 
 
 class UserDescription(View):
-    """ GET: returns the users personal description
-        POST: updates the users personal description
+    """ get or set the users description
+        GET: apiurl/<the user if>/
+        POST: required json object {
+            'userid': the user id,
+            'description': 'a string that is the new description 0 < desciption < 255'
+        }
     """
-    def get(self, request: HttpRequest):
-        pass
+    def get(self, request: HttpRequest, user_id: int):
+        resp = JsonResponse({})
+
+        try:
+            user = Users.objects.get(user_id__exact=user_id)
+        except ObjectDoesNotExist:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                'meesage': 'bad user id {}, user not found'.format(user_id)
+            })
+            return resp
+
+        description = user.about
+        resp.status_code = 200
+        resp.content = json.dumps({
+            'message': description
+        })
+
+        return resp
 
     def post(self, request: HttpRequest):
-        pass
+        resp = JsonResponse({})
+        resp.status_code = 200
+        req_body = json.loads(request.body.decode('UTF-8'))
+
+        try:
+            user = Users.objects.get(user_id__exact=req_body['userid'])
+        except ObjectDoesNotExist:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                'meesage': 'bad user id {}, user not found'.format(req_body['userid'])
+            })
+            return resp
+
+        new_desc = req_body['description']
+        if len(new_desc) < 1 or len(new_desc) > 255:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                'message': 'description doesn\'t meet the length requirements: {}'.format(len(new_desc))
+            })
+            return resp
+        else:
+            user.about = new_desc
+            user.save(update_fields=['about'])
+
+        resp.content = json.dumps({
+            'message': 'success'
+        })
+        return resp
 
 
 class UserFollowers(View):

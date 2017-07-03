@@ -69,3 +69,54 @@ class UserCountTest(TestCase):
         print('\tno_user_count: {}: {}'.format(resp.status_code, resp.json()['message']))
         self.assertEqual(resp.status_code, 400)
         self.assertContains(resp, 'bad user id', status_code=400)
+
+
+@tag('usertest')
+class UserDescriptionTest(TestCase):
+    def _create_request(self, user_id: int, data: json = None):
+        if data is None:
+            resp = self.client.get('/snaplife/api/user/description/{}/'.format(user_id))
+        else:
+            resp = self.client.post('/snaplife/api/user/description/', data=json.dumps(data), content_type='application/json')
+        return resp
+
+    def _create_user(self, username: str, password: str):
+        salt = 'blahfffffj349feiblah123'
+        signer = Signer(salt=salt)
+
+        user = Users()
+        user.user_id = 324
+        user.first_name = 'Billy'
+        user.last_name = 'Bobtest'
+        user.user_name = username
+        user.about = "This is about me and the things I like"
+        user.last_login_date = timezone.now()
+        user.password_hash = signer.signature(password)
+        user.salt_hash = salt
+        user.save()
+
+        return user
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.client = Client()
+
+    def test_get_description(self):
+        user = self._create_user('mMouse', 'password123')
+        resp = self._create_request(user.user_id)
+
+        print('\tget_description: {}: {}'.format(resp.status_code, resp.json()['message']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'This is about me')
+
+    def test_set_description(self):
+        user = self._create_user('mMouse', 'password1234567')
+        resp = self._create_request(user.user_id, {
+            'userid': user.user_id,
+            'description': 'This is a new description set by me!!!!!!! :)'
+        })
+
+        print('\tset_description: {}: {}'.format(resp.status_code, resp.json()['message']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'success')
