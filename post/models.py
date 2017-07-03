@@ -1,4 +1,6 @@
+""" Posts Model """
 from django.db import models
+from user.models import Users
 
 
 class Posts(models.Model):
@@ -9,7 +11,7 @@ class Posts(models.Model):
     view_count = models.IntegerField(default=0)
     like_count = models.IntegerField(default=0)
     report_count = models.IntegerField(default=0)
-    # one to many relationship to the comments model
+    user = models.ForeignKey(Users, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return 'something'

@@ -1,6 +1,5 @@
 """ Users model """
 from django.db import models
-from post.models import Posts
 
 
 class Users(models.Model):
@@ -16,7 +15,6 @@ class Users(models.Model):
     last_login_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     about = models.CharField(max_length=100, blank=True)
-    posts = models.ForeignKey(Posts, default=None, on_delete=models.CASCADE)
     # profile_pic
     # friends_id = many to many key
 
