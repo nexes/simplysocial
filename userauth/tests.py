@@ -1,11 +1,12 @@
 from user.models import Users
 import json
 
-from django.test import TestCase, Client
+from django.test import TestCase, Client, tag
 from django.core.signing import Signer
 from django.utils import timezone
 
 
+@tag('userauth')
 class LoginUserTestCase(TestCase):
     def _create_user(self, username: str, password: str):
         salt = 'blahfffffj349feiblah123'
@@ -64,6 +65,7 @@ class LoginUserTestCase(TestCase):
         self.assertContains(resp, 'is incorrect', status_code=400)
 
 
+@tag('userauth')
 class CreateUserTestCase(TestCase):
     def _create_json_request(self, data: json):
         resp = self.client.post(
@@ -128,6 +130,7 @@ class CreateUserTestCase(TestCase):
         self.assertContains(resp, 'username mmouse is already taken', status_code=400)
 
 
+@tag('userauth')
 class DeleteUserTestCase(TestCase):
     def _create_user(self, username: str, password: str):
         salt = 'blahj3245fj349feiblah123'
