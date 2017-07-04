@@ -50,10 +50,16 @@ class AuthUserLogin(View):
             })
             return resp
 
+        if request.session.get('{}'.format(user.user_id), False) is True:
+            resp.status_code = 400
+            resp.content = json.dumps({
+                'message': 'user {} is already sigend in'.format(request_json.get('username'))
+            })
+            return resp
+
         if self._verify_user_password(user, request_json.get('password')):
             user.last_login_date = timezone.now()
-            request.session['user_id'] = user.user_id
-
+            request.session['{}'.format(user.user_id)] = True
             user.save()
         else:
             resp.status_code = 400
@@ -209,6 +215,10 @@ class AuthUserDelete(View):
             return resp
 
         if self._verify_user_password(user, resp_json['password']):
+            try:
+                del request.session['{}'.format(user.user_id)]
+            except KeyError:
+                pass
             user.delete()
         else:
             resp.status_code = 400
