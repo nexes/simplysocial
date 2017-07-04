@@ -77,6 +77,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'lifesnap.wsgi.application'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 
 # Database

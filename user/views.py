@@ -102,7 +102,9 @@ class UserFollowers(View):
         POST: can follow or unfollow a user
     """
     def get(self, request: HttpRequest):
+        #TODO - after we setup the followers model
         pass
 
     def post(self, request: HttpRequest):
+        #TODO - after we setup the followers model
         pass

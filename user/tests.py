@@ -120,7 +120,7 @@ class UserDescriptionTest(TestCase):
         print('\tset_description: {}: {}'.format(resp.status_code, resp.json()['message']))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
-    
+
     def test_set_long_description(self):
         user = self._create_user('mMouse', 'password1234567')
         resp = self._create_request(user.user_id, {
