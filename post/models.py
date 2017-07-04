@@ -1,6 +1,6 @@
 """ Posts Model """
-from django.db import models
 from user.models import Users
+from django.db import models
 
 
 class Posts(models.Model):
