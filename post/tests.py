@@ -54,7 +54,7 @@ class UserPostCreate(TestCase):
         })
 
         resp = self.client.post(url, data, content_type='application/json')
-        print('\tpost_create: creating new post for user: {}'.format(resp.status_code))
+        print('\tpost_create: creating new post for user: {}, postid {}'.format(resp.status_code, resp.json()['postid']))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
 
@@ -108,3 +108,6 @@ class UserPostCreate(TestCase):
 
         self.assertEqual(resp2.status_code, 200)
         self.assertContains(resp2, 'success')
+
+    def test_post_search(self):
+        pass
