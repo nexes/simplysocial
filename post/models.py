@@ -8,6 +8,7 @@ class Posts(models.Model):
     image_url = models.CharField(blank=False, unique=True, max_length=100)
     image_name = models.CharField(blank=False, unique=True, max_length=50)
     message = models.CharField(blank=True, max_length=254)
+    message_title = models.CharField(blank=True, max_length=100)
     creation_date = models.DateTimeField(auto_now_add=True)
     view_count = models.IntegerField(default=0)
     like_count = models.IntegerField(default=0)
