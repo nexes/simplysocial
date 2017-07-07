@@ -1,6 +1,7 @@
+import json
 from random import random
 from lifesnap.aws import AWS
-import json
+from lifesnap.util import JSONResponse
 
 from user.models import Users
 from post.models import Posts
@@ -21,35 +22,21 @@ class PostCreate(View):
     """
     def post(self, request: HttpRequest):
         s3_bucket = AWS('snap-life')
-        resp = JsonResponse({})
-        resp.status_code = 200
         new_post = Posts()
 
         try:
             req_json = json.loads(request.body.decode('UTF-8'))
         except json.JSONDecodeError:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                "message": "request decode error, bad data sent to the server"
-                })
-            return resp
+            return JSONResponse.new(code=400, message='request decode error, bad data sent to the server')
 
         try:
             user = Users.objects.get(user_id__exact=req_json['userid'])
         except ObjectDoesNotExist:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                "message": "userid {} is not found".format(req_json['userid'])
-                })
-            return resp
+            return JSONResponse.new(code=400, message='user id {} is not found.'.format(req_json['userid']))
 
         #only signed in users can create posts
         if request.session.get('{}'.format(user.user_id), False) is False:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                'message': 'user is not signed in'
-            })
-            return resp
+            return JSONResponse.new(code=400, message='user is not signed in')
 
         #create new post and assign to the user
         new_post.post_id = int(random() * 1000000)
@@ -64,10 +51,7 @@ class PostCreate(View):
         new_post.save()
         user.posts_set.add(new_post)
 
-        resp.content = json.dumps({
-            'message': 'success'
-        })
-        return resp
+        return JSONResponse.new(code=200, message='success', postid=new_post.post_id)
 
 
 #TODO: refactor all of these resp.status_code resp.content stuff DRY DRY DRY
@@ -88,63 +72,36 @@ class PostDelete(View):
         try:
             req_json = json.loads(request.body.decode('UTF-8'))
         except json.JSONDecodeError:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                "message": "request decode error, bad data sent to the server"
-                })
-            return resp
+            return JSONResponse.new(code=400, message="request decode error, bad data sent to the server")
 
         try:
             user = Users.objects.get(user_id__exact=req_json.get('userid', ''))
         except ObjectDoesNotExist:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                "message": "userid {} is not found".format(req_json['userid'])
-                })
-            return resp
+            return JSONResponse.new(code=400, message="userid {} is not found".format(req_json['userid']))
 
         #check user is logged in via sessions
         if request.session.get('{}'.format(user.user_id), False) is False:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                'message': 'user is not signed in'
-            })
-            return resp
+            return JSONResponse.new(code=400, message='user is not signed in')
 
         if req_json.get('postid') is None and req_json.get('title') is None:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                'message': 'postid or title must be present'
-            })
-            return resp
+            return JSONResponse.new(code=400, message='postid or title must be present')
 
         if req_json.get('postid') is not None:
             try:
                 post = user.posts_set.get(post_id__exact=int(req_json['postid']))
             except ObjectDoesNotExist:
-                resp.status_code = 400
-                resp.content = json.dumps({
-                    'message': 'postid {} is not found'.format(req_json['postid'])
-                })
-                return resp
+                return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json['postid']))
+
         elif req_json.get('title') is not None:
             try:
                 post = user.posts_set.get(message_title__exact=req_json['title'])
             except ObjectDoesNotExist:
-                resp.status_code = 400
-                resp.content = json.dumps({
-                    'message': 'post with title {} is not found'.format(req_json['title'])
-                })
-                return resp
+                return JSONResponse.new(code=400, message='post with title {} is not found'.format(req_json['title']))
 
         s3_bucket.remove_image(key_name=post.image_name)
         post.delete()
 
-        resp.content = json.dumps({
-            'message': 'success',
-            'postcount': '{}'.format(user.posts_set.count())
-        })
-        return resp
+        return JSONResponse.new(code=200, message='success', postcount=user.posts_set.count())
 
 
 class PostUpdate(View):
@@ -155,10 +112,26 @@ class PostUpdate(View):
 
 class PostSearch(View):
     """ returned posts from search results
-        GET: search: username, title
+        GET: search for posts given the search parameters
+        required json object: {
+            'userid': the user the posts should come from,
+            'count': integer, the number of search results to return, if count > number of user posts, all posts are returned
+            'username': if calling api endpoint /search/username/,
+            'title': if calling api endpoint /search/title/,
+        }
     """
     def get(self, request: HttpRequest, search: str, count: int):
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='bad json request sent to the server')
+
+        try:
+            user = Users.objects.get(user_id__exact=req_json.get('userid', ''))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user with userid {} is not found'.format(req_json['userid']))
+            
         if 'username' in request.path:
-            pass
+            print('searching for username')
         elif 'title' in request.path:
-            pass
+            print('searching for title')
