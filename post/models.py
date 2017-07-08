@@ -4,6 +4,9 @@ from django.db import models
 
 
 class Posts(models.Model):
+    class Meta:
+        ordering = ['-creation_date']
+
     post_id = models.IntegerField(blank=False, unique=True)
     image_url = models.CharField(blank=False, unique=True, max_length=100)
     image_name = models.CharField(blank=False, unique=True, max_length=50)
@@ -16,4 +19,4 @@ class Posts(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return 'something'
+        return '{}: {}'.format(self.post_id, self.image_url)
