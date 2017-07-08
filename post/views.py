@@ -113,25 +113,41 @@ class PostUpdate(View):
 class PostSearch(View):
     """ returned posts from search results
         GET: search for posts given the search parameters
-        required json object: {
-            'userid': the user the posts should come from,
-            'count': integer, the number of search results to return, if count > number of user posts, all posts are returned
-            'username': if calling api endpoint /search/username/,
-            'title': if calling api endpoint /search/title/,
+        returned json object: {
+            'code': http status_code,
+            'message': 'server message, 'sucess' or 'error message',
+            'post': [array of json objects {
+                'message': post message,
+                'title': post title,
+                'views': view count,
+                'likes': like count,
+                'imageurl': the http url where the image can be found,
+                'date': the date the post was created
+            }]
         }
     """
-    def get(self, request: HttpRequest, search: str, count: int):
-        try:
-            req_json = json.loads(request.body.decode('UTF-8'))
-        except json.JSONDecodeError:
-            return JSONResponse.new(code=400, message='bad json request sent to the server')
+    def get(self, request: HttpRequest, userid: str, title: str, count: str):
+        print(request.path)
+        count = int(count)
+        if count < 0:
+            count *= -1
 
         try:
-            user = Users.objects.get(user_id__exact=req_json.get('userid', ''))
+            user = Users.objects.get(user_id__exact=userid)
         except ObjectDoesNotExist:
-            return JSONResponse.new(code=400, message='user with userid {} is not found'.format(req_json['userid']))
-            
-        if 'username' in request.path:
-            print('searching for username')
-        elif 'title' in request.path:
-            print('searching for title')
+            return JSONResponse.new(code=400, message='userid {} is not found'.format(userid))
+
+        posts = user.posts_set.filter(message_title__icontains=title)[:count]
+        post_list = []
+
+        for post in posts:
+            p = dict({
+                'message': post.message,
+                'title': post.message_title,
+                'views': post.view_count,
+                'likes': post.like_count,
+                'imageurl': post.image_url,
+                'date': post.creation_date.isoformat()
+            })
+            post_list.append(p)
+        return JSONResponse.new(code=200, message='success', posts=post_list)
