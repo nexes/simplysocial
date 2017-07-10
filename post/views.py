@@ -1,5 +1,6 @@
 import json
 from random import random
+from datetime import datetime
 from lifesnap.aws import AWS
 from lifesnap.util import JSONResponse
 
@@ -54,7 +55,6 @@ class PostCreate(View):
         return JSONResponse.new(code=200, message='success', postid=new_post.post_id)
 
 
-#TODO: refactor all of these resp.status_code resp.content stuff DRY DRY DRY
 class PostDelete(View):
     """ Delete a post if found, postid and title are optional but one needs to be set
         Post: required json object: {
@@ -86,17 +86,14 @@ class PostDelete(View):
         if req_json.get('postid') is None and req_json.get('title') is None:
             return JSONResponse.new(code=400, message='postid or title must be present')
 
-        if req_json.get('postid') is not None:
-            try:
+        try:
+            if req_json.get('postid') is not None:
                 post = user.posts_set.get(post_id__exact=int(req_json['postid']))
-            except ObjectDoesNotExist:
-                return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json['postid']))
 
-        elif req_json.get('title') is not None:
-            try:
+            elif req_json.get('title') is not None:
                 post = user.posts_set.get(message_title__exact=req_json['title'])
-            except ObjectDoesNotExist:
-                return JSONResponse.new(code=400, message='post with title {} is not found'.format(req_json['title']))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json['postid']))
 
         s3_bucket.remove_image(key_name=post.image_name)
         post.delete()
@@ -110,12 +107,12 @@ class PostUpdate(View):
         pass
 
 
-class PostSearch(View):
+class PostSearchTitle(View):
     """ returned posts from search results
         GET: search for posts given the search parameters
         returned json object: {
             'code': http status_code,
-            'message': 'server message, 'sucess' or 'error message',
+            'message': 'server message, 'success' or 'error message',
             'post': [array of json objects {
                 'message': post message,
                 'title': post title,
@@ -127,7 +124,6 @@ class PostSearch(View):
         }
     """
     def get(self, request: HttpRequest, userid: str, title: str, count: str):
-        print(request.path)
         count = int(count)
         if count < 0:
             count *= -1
@@ -138,6 +134,56 @@ class PostSearch(View):
             return JSONResponse.new(code=400, message='userid {} is not found'.format(userid))
 
         posts = user.posts_set.filter(message_title__icontains=title)[:count]
+        post_list = []
+
+        for post in posts:
+            p = dict({
+                'message': post.message,
+                'title': post.message_title,
+                'views': post.view_count,
+                'likes': post.like_count,
+                'imageurl': post.image_url,
+                'date': post.creation_date.isoformat()
+            })
+            post_list.append(p)
+        return JSONResponse.new(code=200, message='success', posts=post_list)
+
+
+class PostSearchDate(View):
+    """ return posts from the specified time
+        GET: search for posts up to count from time_stamp until now.
+             time_stamp: should be an integer. Send your date using datetime.timestamp()
+
+        returned json object: {
+            'code': http status_code,
+            'message': 'server message, 'success' or 'error message',
+            'post': [array of json objects {
+                'message': post message,
+                'title': post title,
+                'views': view count,
+                'likes': like count,
+                'imageurl': the http url where the image can be found,
+                'date': the date the post was created
+            }]
+        }
+    """
+    def get(self, request: HttpRequest, userid: str, time_stamp: str, count: str):
+        count = int(count)
+        if count < 0:
+            count *= -1
+
+        try:
+            user = Users.objects.get(user_id__exact=userid)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='userid {} is not found'.format(userid))
+
+        try:
+            # we can cast to an int because we dont need anymore percision than month and year
+            search_date = datetime.fromtimestamp(int(time_stamp))
+        except (OverflowError, OSError):
+            return JSONResponse.new(code=400, message='recieved incorrect time stamp {}'.format(time_stamp))
+
+        posts = user.posts_set.filter(creation_date__date__gt=datetime.date(search_date))[:count]
         post_list = []
 
         for post in posts:

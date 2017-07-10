@@ -1,7 +1,9 @@
-from user.models import Users
+from urllib.parse import quote
+from datetime import datetime
 from base64 import b64encode
 import json
 
+from user.models import Users
 from django.utils import timezone
 from django.test import TestCase, tag, Client
 from django.core.signing import Signer
@@ -110,4 +112,43 @@ class UserPostCreate(TestCase):
         self.assertContains(resp2, 'success')
 
     def test_post_search(self):
-        pass
+        self._login_user('password123')
+        q_str = quote('test title')
+        now = datetime(2017, 7, 1)
+
+        url = '/snaplife/api/user/posts/create/'
+        title_search = '/snaplife/api/user/posts/search/title/{}/{}/3/'.format(self.user.user_id, q_str)
+        date_search = '/snaplife/api/user/posts/search/range/{}/{}/3/'.format(self.user.user_id, int(now.timestamp()))
+
+        with open('/Users/jberria/Pictures/test1sprites0.png', 'rb') as f:
+            encode = b64encode(f.read())
+
+        data = json.dumps({
+            'image': encode.decode('utf-8'),
+            'message': 'this is a description of our post',
+            'title': 'a test title!!!',
+            'userid': self.user.user_id
+        })
+        data1 = json.dumps({
+            'image': encode.decode('utf-8'),
+            'message': 'this is another post, the second one',
+            'title': 'test title!!!',
+            'userid': self.user.user_id
+        })
+        data2 = json.dumps({
+            'image': encode.decode('utf-8'),
+            'message': 'django python post about this, i dont know',
+            'title': 'a test',
+            'userid': self.user.user_id
+        })
+        self.client.post(url, data, content_type='application/json')
+        self.client.post(url, data1, content_type='application/json')
+        self.client.post(url, data2, content_type='application/json')
+
+        resp = self.client.get(title_search)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'success')
+
+        resp = self.client.get(date_search)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'success')
