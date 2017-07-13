@@ -1,4 +1,5 @@
 """ handling view requests for user data """
+from lifesnap.util import JSONResponse
 from user.models import Users
 import json
 
@@ -16,85 +17,50 @@ class UserCounts(View):
         try:
             user = Users.objects.get(user_id__exact=user_id)
         except ObjectDoesNotExist:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                'message': 'bad user id {}, user not found'.format(user_id)
-            })
-            return resp
+            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(user_id))
 
         if count_type.lower() == 'posts':
             count = user.posts_set.count()
-            resp.status_code = 200
-            resp.content = json.dumps({
-                'count': count
-            })
+
         elif count_type.lower() == 'followers':
             # TODO - this needs to be done when we create followers model
-            resp.status_code = 200
-            resp.content = json.dumps({
-                'followers': 3
-            })
+            count = 23 #get this from followers
 
-        return resp
+        return JSONResponse.new(code=200, message='success', count=count)
 
 
 class UserDescription(View):
     """ get or set the users description
-        GET: apiurl/<the user if>/
+        GET: apiurl/<the user id>/
         POST: required json object {
             'userid': the user id,
             'description': 'a string that is the new description 0 < desciption < 255'
         }
     """
     def get(self, request: HttpRequest, user_id: int):
-        resp = JsonResponse({})
-
         try:
             user = Users.objects.get(user_id__exact=user_id)
         except ObjectDoesNotExist:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                'meesage': 'bad user id {}, user not found'.format(user_id)
-            })
-            return resp
+            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(user_id))
 
         description = user.about
-        resp.status_code = 200
-        resp.content = json.dumps({
-            'message': description
-        })
-
-        return resp
+        return JSONResponse.new(code=200, message='success', description=description)
 
     def post(self, request: HttpRequest):
-        resp = JsonResponse({})
-        resp.status_code = 200
         req_body = json.loads(request.body.decode('UTF-8'))
 
         try:
             user = Users.objects.get(user_id__exact=req_body['userid'])
         except ObjectDoesNotExist:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                'meesage': 'bad user id {}, user not found'.format(req_body['userid'])
-            })
-            return resp
+            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(req_body['userid']))
 
         new_desc = req_body['description']
         if len(new_desc) < 1 or len(new_desc) > 255:
-            resp.status_code = 400
-            resp.content = json.dumps({
-                'message': 'description doesn\'t meet the length requirements: {}'.format(len(new_desc))
-            })
-            return resp
-        else:
-            user.about = new_desc
-            user.save(update_fields=['about'])
+            return JSONResponse.new(code=400, message='description doesn\'t meet the length requirements: {}'.format(len(new_desc)))
 
-        resp.content = json.dumps({
-            'message': 'success'
-        })
-        return resp
+        user.about = new_desc
+        user.save(update_fields=['about'])
+        return JSONResponse.new(code=200, message='success')
 
 
 class UserFollowers(View):

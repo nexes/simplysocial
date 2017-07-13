@@ -44,7 +44,7 @@ class LoginUserTestCase(TestCase):
 
         print('\tlogin_user status_code = {}: {}'.format(resp.status_code, resp.json()['message']))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'user is logged in', status_code=200)
+        self.assertContains(resp, 'success', status_code=200)
 
     def test_login_bad_user(self):
         """ make sure login fails when a wrong username was given """
@@ -168,7 +168,7 @@ class DeleteUserTestCase(TestCase):
 
         print('\tdelete_user: status_code = {}: {}'.format(resp.status_code, resp.json()['message']))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'user deleted', status_code=200)
+        self.assertContains(resp, 'success', status_code=200)
 
     def test_delete_wrong_password(self):
         """ make sure nothing is deleted when wrong password is given """
