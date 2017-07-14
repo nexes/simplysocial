@@ -48,20 +48,22 @@ class UserPostCreate(TestCase):
         with open('/Users/jberria/Pictures/test1sprites0.png', 'rb') as f:
             encode = b64encode(f.read())
 
-        data = json.dumps({
-            'image': encode.decode('utf-8'),
-            'message': 'this is a description of our post',
-            'title': 'a test title!!!',
-            'userid': self.user.user_id
-        })
+            data = json.dumps({
+                'image': encode.decode('utf-8'),
+                'message': 'this is a description of our post',
+                'title': 'a test title!!!',
+                'userid': self.user.user_id
+            })
 
         resp = self.client.post(url, data, content_type='application/json')
-        print('\tpost_create: creating new post for user: {}, postid {}'.format(resp.status_code, resp.json()['postid']))
+        print('\tpost_create: creating new post for user: {}, postid {}'.format(
+            resp.status_code, resp.json()['postid']))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
 
         resp2 = self.client.get(url2)
-        print('\tpost_create: checking post count for user: count = {}'.format(resp2.json()['count']))
+        print('\tpost_create: checking post count for user: count = {}'.format(
+            resp2.json()['count']))
         self.assertEqual(resp2.status_code, 200)
         self.assertContains(resp2, 'count')
 
@@ -181,3 +183,30 @@ class UserPostCreate(TestCase):
         print('\tnew message: {}'.format(resp.json()['post']['message']))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
+
+    def test_post_like(self):
+        self._login_user('password123')
+        url_create = '/snaplife/api/user/posts/create/'
+        url_like = '/snaplife/api/user/posts/like/'
+
+        with open('/Users/jberria/Pictures/test1sprites0.png', 'rb') as f:
+            encode = b64encode(f.read())
+
+        data = json.dumps({
+            'image': encode.decode('utf-8'),
+            'message': 'this is a description of our post',
+            'title': 'a test title!!!',
+            'userid': self.user.user_id
+        })
+        resp = self.client.post(url_create, data, content_type='application/json')
+        post_id = resp.json()['postid']
+        url_like_get = '/snaplife/api/user/posts/like/{}/'.format(post_id)
+
+        resp = self.client.post(url_like, json.dumps({'postid': post_id}), content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'success')
+
+        resp2 = self.client.get(url_like_get)
+        print('\tlike count: {}'.format(resp2.json()['like']))
+        self.assertEqual(resp2.status_code, 200)
+        self.assertContains(resp2, 'success')

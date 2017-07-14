@@ -7,6 +7,7 @@ from lifesnap.util import JSONResponse
 from user.models import Users
 from post.models import Posts
 from django.views import View
+from django.db.models import F
 from django.http import HttpRequest, JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -55,6 +56,7 @@ class PostCreate(View):
         return JSONResponse.new(code=200, message='success', postid=new_post.post_id)
 
 
+
 class PostDelete(View):
     """ Delete a post if found, postid and title are optional but one needs to be set
         Post: required json object: {
@@ -99,6 +101,7 @@ class PostDelete(View):
         post.delete()
 
         return JSONResponse.new(code=200, message='success', postcount=user.posts_set.count())
+
 
 
 class PostUpdate(View):
@@ -150,7 +153,8 @@ class PostUpdate(View):
             'imageurl': post.image_url,
             'date': post.creation_date.isoformat()
         })
-        return JSONResponse.new(code=200, message='success', post=p)       
+        return JSONResponse.new(code=200, message='success', post=p)
+
 
 
 class PostSearchTitle(View):
@@ -195,6 +199,7 @@ class PostSearchTitle(View):
             })
             post_list.append(p)
         return JSONResponse.new(code=200, message='success', posts=post_list)
+
 
 
 class PostSearchDate(View):
@@ -247,3 +252,46 @@ class PostSearchDate(View):
             })
             post_list.append(p)
         return JSONResponse.new(code=200, message='success', posts=post_list)
+
+
+
+class PostLike(View):
+    """ return the like count of a post, or update the like count to a post
+        GET: returned json object {
+            'postid': the post id,
+            'like': the like count
+        }
+        POST: required json object {
+            'postid': postid
+        }
+        POST: returned json object {
+            'code': http status code,
+            'message': success message,
+            'likecount': updated like count
+        }
+    """
+    def get(self, request: HttpRequest, postid: str):
+        postid = int(postid)
+
+        try:
+            post = Posts.objects.get(post_id__exact=postid)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='postid {} was not found'.format(postid))
+
+        return JSONResponse.new(code=200, message='success', postid=post.post_id, like=post.like_count)
+
+    def post(self, request: HttpRequest):
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
+
+        try:
+            post = Posts.objects.get(post_id__exact=req_json['postid'])
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json['postid']))
+
+        post.like_count += 1
+        post.save(update_fields=['like_count'])
+
+        return JSONResponse.new(code=200, message='success', likecount=post.like_count)
