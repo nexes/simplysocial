@@ -102,9 +102,55 @@ class PostDelete(View):
 
 
 class PostUpdate(View):
-    """  """
+    """ Updates a post title or message. Cannot update a posts image
+        POST: required json object {
+            'userid': the userid of the logged in user,
+            'postid': the postid from the post that will be updated
+            'title': if this is not empty, the title will be updated,
+            'message': if this is not empty, the message will be updated,
+        }
+    """
     def post(self, request: HttpRequest):
-        pass
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='request decode error, bad data sent to the server')
+
+        if request.session.get('{}'.format(req_json['userid']), False) is False:
+            return JSONResponse.new(code=400, message='userid {} is not logged in to update post {}'.format(req_json['userid'], req_json['postid']))
+
+        try:
+            user = Users.objects.get(user_id__exact=req_json['userid'])
+            post = user.posts_set.get(post_id__exact=req_json['postid'])
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='userid {} or postid {} was not found'.format(req_json['userid'], req_json['postid']))
+
+        new_title = req_json.get('title')
+        new_message = req_json.get('message')
+
+        if new_title is not None:
+            if len(new_title) <= 100:
+                post.message_title = new_title
+            else:
+                return JSONResponse.new(code=400, message='title length incorrect {}'.format(len(new_title)))
+
+        if new_message is not None:
+            if len(new_message) <= 254:
+                post.message = new_message
+            else:
+                return JSONResponse.new(code=400, message='message length incorrect {}'.format(len(new_message)))
+
+        post.save(update_fields=['message_title', 'message'])
+        p = dict({
+            'postid': post.post_id,
+            'message': post.message,
+            'title': post.message_title,
+            'views': post.view_count,
+            'likes': post.like_count,
+            'imageurl': post.image_url,
+            'date': post.creation_date.isoformat()
+        })
+        return JSONResponse.new(code=200, message='success', post=p)       
 
 
 class PostSearchTitle(View):
@@ -114,6 +160,7 @@ class PostSearchTitle(View):
             'code': http status_code,
             'message': 'server message, 'success' or 'error message',
             'post': [array of json objects {
+                'postid': the postid,
                 'message': post message,
                 'title': post title,
                 'views': view count,
@@ -138,6 +185,7 @@ class PostSearchTitle(View):
 
         for post in posts:
             p = dict({
+                'postid': post.post_id,
                 'message': post.message,
                 'title': post.message_title,
                 'views': post.view_count,
@@ -158,6 +206,7 @@ class PostSearchDate(View):
             'code': http status_code,
             'message': 'server message, 'success' or 'error message',
             'post': [array of json objects {
+                'postid': post id,
                 'message': post message,
                 'title': post title,
                 'views': view count,
@@ -188,6 +237,7 @@ class PostSearchDate(View):
 
         for post in posts:
             p = dict({
+                'postid': post.post_id,
                 'message': post.message,
                 'title': post.message_title,
                 'views': post.view_count,
