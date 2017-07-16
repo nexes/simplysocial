@@ -12,8 +12,6 @@ from django.views import View
 class UserCounts(View):
     """ request the count of posts, followers... e.g /count/posts """
     def get(self, request: HttpRequest, user_id: int, count_type: str):
-        resp = JsonResponse({})
-
         try:
             user = Users.objects.get(user_id__exact=user_id)
         except ObjectDoesNotExist:

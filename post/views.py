@@ -1,5 +1,5 @@
 import json
-from random import random
+from uuid import uuid4
 from datetime import datetime
 from lifesnap.aws import AWS
 from lifesnap.util import JSONResponse
@@ -7,7 +7,6 @@ from lifesnap.util import JSONResponse
 from user.models import Users
 from post.models import Posts
 from django.views import View
-from django.db.models import F
 from django.http import HttpRequest, JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -41,7 +40,7 @@ class PostCreate(View):
             return JSONResponse.new(code=400, message='user is not signed in')
 
         #create new post and assign to the user
-        new_post.post_id = int(random() * 1000000)
+        new_post.post_id = uuid4().time_low
         image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
 
         url = s3_bucket.upload_image(image_name, req_json['image'])

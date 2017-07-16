@@ -2,7 +2,7 @@
 from lifesnap.util import JSONResponse
 from user.models import Users
 from secrets import token_hex
-from random import random
+from uuid import uuid4
 import json
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -50,7 +50,7 @@ class AuthUserLogin(View):
             user.save()
         else:
             message = 'username {}, or password {} is incorrect'.format(
-                request_json.get('username'), 
+                request_json.get('username'),
                 request_json.get('password'))
             return JSONResponse.new(code=400, message=message)
 
@@ -111,7 +111,7 @@ class AuthUserCreate(View):
             salt = token_hex(16)
             signer = Signer(salt=salt)
 
-            new_user.user_id = int(random() * 1000000)
+            new_user.user_id = uuid4().time_low
             new_user.first_name = _first_name
             new_user.last_name = _last_name
             new_user.user_name = _user_name
@@ -157,11 +157,11 @@ class AuthUserDelete(View):
             return JSONResponse.new(code=400, message='request decode error, bad data sent to the server')
 
         try:
-            user = Users.objects.get(user_name__exact=resp_json['username'])
+            user = Users.objects.get(user_name__exact=resp_json.get('username'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user {} is not found'.format(resp_json['username']))
 
-        if self._verify_user_password(user, resp_json['password']):
+        if self._verify_user_password(user, resp_json.get('password')):
             try:
                 del request.session['{}'.format(user.user_id)]
             except KeyError:
