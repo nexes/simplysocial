@@ -119,6 +119,7 @@ class UserPostCreate(TestCase):
         now = datetime(2017, 7, 1)
 
         url = '/snaplife/api/user/posts/create/'
+        delete_user = '/snaplife/api/auth/user/delete/'
         title_search = '/snaplife/api/user/posts/search/title/{}/{}/3/'.format(self.user.user_id, q_str)
         date_search = '/snaplife/api/user/posts/search/range/{}/{}/3/'.format(self.user.user_id, int(now.timestamp()))
 
@@ -127,8 +128,8 @@ class UserPostCreate(TestCase):
 
         data = json.dumps({
             'image': encode.decode('utf-8'),
-            'message': 'this is a description of our post',
-            'title': 'a test title!!!',
+            'message': 'this is another post, the second one',
+            'title': 'test title!!! the test',
             'userid': self.user.user_id
         })
         data1 = json.dumps({
@@ -143,6 +144,11 @@ class UserPostCreate(TestCase):
             'title': 'a test',
             'userid': self.user.user_id
         })
+        data3 = json.dumps({
+            'username': self.user.user_name,
+            'password': 'password123'
+        })
+
         self.client.post(url, data, content_type='application/json')
         self.client.post(url, data1, content_type='application/json')
         self.client.post(url, data2, content_type='application/json')
@@ -154,6 +160,8 @@ class UserPostCreate(TestCase):
         resp = self.client.get(date_search)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
+
+        resp = self.client.post(delete_user, data3, content_type='application/json')
 
     def test_post_update(self):
         self._login_user('password123')
