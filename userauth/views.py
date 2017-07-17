@@ -1,5 +1,6 @@
 """ handles authenticating a user, or creating/deleting a new user """
 from lifesnap.util import JSONResponse
+from lifesnap.aws import AWS
 from user.models import Users
 from secrets import token_hex
 from uuid import uuid4
@@ -111,7 +112,7 @@ class AuthUserCreate(View):
             salt = token_hex(16)
             signer = Signer(salt=salt)
 
-            new_user.user_id = uuid4().time_low
+            new_user.user_id = uuid4().time_mid
             new_user.first_name = _first_name
             new_user.last_name = _last_name
             new_user.user_name = _user_name
@@ -151,6 +152,8 @@ class AuthUserDelete(View):
         return user_pass_hash == challenge_hash
 
     def post(self, request: HttpRequest):
+        aws = AWS('snap-life')
+
         try:
             resp_json = json.loads(request.body.decode('utf-8'))
         except json.JSONDecodeError:
@@ -166,6 +169,13 @@ class AuthUserDelete(View):
                 del request.session['{}'.format(user.user_id)]
             except KeyError:
                 pass
+
+            all_post = user.posts_set.all()
+            post_key_names = []
+            for post in all_post:
+                post_key_names.append(post.image_name)
+
+            aws.remove_images(post_key_names)
             user.delete()
         else:
             return JSONResponse.new(code=400, message='username {}, or password {} is incorrect'.format(resp_json.get('username'), resp_json.get('password')))

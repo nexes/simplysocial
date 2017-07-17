@@ -40,7 +40,8 @@ class PostCreate(View):
             return JSONResponse.new(code=400, message='user is not signed in')
 
         #create new post and assign to the user
-        new_post.post_id = uuid4().time_low
+        new_post.post_id = uuid4().time_mid
+        print(new_post.post_id)
         image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
 
         url = s3_bucket.upload_image(image_name, req_json['image'])
@@ -183,6 +184,10 @@ class PostSearchTitle(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} is not found'.format(userid))
 
+        post_count = user.posts_set.count()
+        if count >= post_count:
+            count = post_count - 1
+
         posts = user.posts_set.filter(message_title__icontains=title)[:count]
         post_list = []
 
@@ -235,6 +240,10 @@ class PostSearchDate(View):
             search_date = datetime.fromtimestamp(int(time_stamp))
         except (OverflowError, OSError):
             return JSONResponse.new(code=400, message='recieved incorrect time stamp {}'.format(time_stamp))
+
+        post_count = user.posts_set.count()
+        if count >= post_count:
+            count = post_count - 1
 
         posts = user.posts_set.filter(creation_date__date__gt=datetime.date(search_date))[:count]
         post_list = []
