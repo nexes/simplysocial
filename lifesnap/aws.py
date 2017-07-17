@@ -1,5 +1,6 @@
 import base64
 import boto3
+import json
 # import botocore
 
 
@@ -49,3 +50,24 @@ class AWS(object):
         """
         # deleting from a S3 bucket will always return a 204. no solid way of checking success
         self.s3.delete_object(Bucket=self.bucket_name, Key=key_name)
+
+    def remove_images(self, key_names: [str]):
+        """ removes multiple images from our AWS S3 bucket
+            key_names: list of the image names that need to be deleted.
+        """
+        if not key_names:
+            return
+
+        objects = []
+        for key in key_names:
+            objects.append({
+                'Key': key
+            })
+
+        resp = self.s3.delete_objects(
+            Bucket=self.bucket_name,
+            Delete=dict({
+                'Objects': objects,
+            })
+        )
+        return resp
