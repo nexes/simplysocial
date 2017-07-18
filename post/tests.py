@@ -218,3 +218,31 @@ class UserPostCreate(TestCase):
         print('\tlike count: {}'.format(resp2.json()['like']))
         self.assertEqual(resp2.status_code, 200)
         self.assertContains(resp2, 'success')
+
+    def test_post_report(self):
+        self._login_user('password123')
+        url_report = '/snaplife/api/user/posts/report/'
+        url_create = '/snaplife/api/user/posts/create/'
+
+        with open('/Users/jberria/Pictures/test1sprites0.png', 'rb') as f:
+            encode = b64encode(f.read())
+
+        data = json.dumps({
+            'image': encode.decode('utf-8'),
+            'message': 'this is a description of our post',
+            'title': 'a test title!!!',
+            'userid': self.user.user_id
+        })
+        resp = self.client.post(url_create, data, content_type='application/json')
+        postid = resp.json()['postid']
+
+        data1 = json.dumps({
+            'postid': postid,
+            'email': 'email@gmail.com',
+            'reason': 'offensive post'
+        })
+
+        resp = self.client.post(url_report, data1, content_type='application/json')
+        print('\tpost_report status: {}'.format(resp.status_code))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['count'], 1)

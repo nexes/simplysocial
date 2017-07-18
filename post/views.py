@@ -7,6 +7,8 @@ from lifesnap.util import JSONResponse
 from user.models import Users
 from post.models import Posts
 from django.views import View
+from django.conf import settings
+from django.core.mail import send_mail
 from django.http import HttpRequest, JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -41,7 +43,6 @@ class PostCreate(View):
 
         #create new post and assign to the user
         new_post.post_id = uuid4().time_mid
-        print(new_post.post_id)
         image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
 
         url = s3_bucket.upload_image(image_name, req_json['image'])
@@ -295,11 +296,47 @@ class PostLike(View):
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
         try:
-            post = Posts.objects.get(post_id__exact=req_json['postid'])
+            post = Posts.objects.get(post_id__exact=req_json.get('postid'))
         except ObjectDoesNotExist:
-            return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json['postid']))
+            return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json.get('postid')))
 
         post.like_count += 1
         post.save(update_fields=['like_count'])
 
         return JSONResponse.new(code=200, message='success', likecount=post.like_count)
+
+
+#TODO - email is not working, gmail side?
+class PostReport(View):
+    """ report a post, you do not need to be logged in to report
+        required json object {
+            'postid': the id of the post that is being reported,
+            'reason': the reason the post is being reported,
+            'email': the email address of the reporter - for future communication
+        }
+    """
+    def post(self, request: HttpRequest):
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
+
+        try:
+            post = Posts.objects.get(post_id__exact=req_json.get('postid'))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='post {} is not found'.format(req_json.get('postid')))
+
+        post.report_count += 1
+        post.save(update_fields=['report_count'])
+
+        #TODO - send an email to the reporter
+
+        send_mail(
+            'Report for post ID {}, post name {}'.format(post.post_id, post.image_name),
+            'Reported by {}\nReport count: {}'.format(req_json.get('email'), post.report_count),
+            settings.EMAIL_HOST_USER,
+            [settings.EMAIL_HOST_USER],
+            fail_silently=True
+        )
+
+        return JSONResponse.new(code=200, message='success', count=post.report_count)
