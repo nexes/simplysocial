@@ -32,6 +32,11 @@ with open('supertopsecretprivatesettings.json') as f:
         SECRET_KEY = SETTINGS['SECRET_KEY']
         DEBUG = SETTINGS['DEBUG']
         ALLOWED_HOSTS = SETTINGS['ALLOWED_HOSTS']
+        EMAIL_HOST = SETTINGS['EMAIL_HOST']
+        EMAIL_HOST_USER = SETTINGS['EMAIL_USER']
+        EMAIL_HOST_PASSWORD = SETTINGS['EMAIL_PASSWORD']
+        EMAIL_PORT = SETTINGS['EMAIL_PORT']
+        EMAIL_USE_TLS = SETTINGS['EMAIL_TLS']
 
 
 # Application definition
