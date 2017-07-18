@@ -40,6 +40,7 @@ class UserCountTest(TestCase):
         user = self._create_user('mMouse', 'password2345')
         post = Posts()
         post.post_id = 123
+        post.image_name = '234234'
         post.image_url = 'something.com'
         post.message = 'some post message'
         post.view_count = 23
@@ -48,6 +49,7 @@ class UserCountTest(TestCase):
 
         post2 = Posts()
         post2.post_id = 122343
+        post.image_name = '23sfsdf4234'
         post2.image_url = 'somethingelse.com'
         post2.message = 'some post message again'
         post2.view_count = 233
@@ -131,3 +133,49 @@ class UserDescriptionTest(TestCase):
         print('\tset_long_description: {}: {}'.format(resp.status_code, resp.json()['message']))
         self.assertEqual(resp.status_code, 400)
         self.assertContains(resp, 'length requirements', status_code=400)
+
+@tag('usertest')
+class UserFollowers(TestCase):
+    def _create_user(self, username: str, password: str, userid: int):
+        salt = 'blahfffff{}j349'.format(password)
+        signer = Signer(salt=salt)
+
+        user = Users()
+        user.user_id = userid
+        user.first_name = 'Billy'
+        user.last_name = 'Bobtest'
+        user.user_name = username
+        user.email = '{}@gmail.com'.format(username)
+        user.about = "This is about me and the things I like"
+        user.last_login_date = timezone.now()
+        user.password_hash = signer.signature(password)
+        user.salt_hash = salt
+        user.save()
+
+        return user
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.client = Client()
+
+    def test_followers(self):
+        url_new = '/snaplife/api/user/follow/new/'
+        url_remove = '/snaplife/api/user/follow/remove/'
+
+        jim = self._create_user('jimjim', 'password123', 123)
+        jane = self._create_user('jjane', '123455', 344)
+        sue = self._create_user('sueB', 'pass567word', 564)
+
+        self.client.post(url_new, json.dumps({'userid': jim.user_id, 'username':jane.user_name}), content_type='application/json')
+        resp = self.client.post(url_new, json.dumps({'userid': jim.user_id, 'username':sue.user_name}), content_type='application/json')
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['followercount'], 2)
+        print('\ttest_followers: added two followers {}'.format(resp.json()['followercount']))
+
+        resp = self.client.post(url_remove, json.dumps({'userid':jim.user_id, 'username':sue.user_name}), content_type='application/json')
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['followercount'], 1)
+        print('\ttest_followers: removed one follower {}'.format(resp.json()['followercount']))

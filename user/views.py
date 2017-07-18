@@ -4,13 +4,17 @@ from user.models import Users
 import json
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest
 from django.views import View
 
 
 
 class UserCounts(View):
-    """ request the count of posts, followers... e.g /count/posts """
+    """ request the following count
+        /apiendpoint/posts/ - return the number of posts the user has made
+        /apiendpoint/followers/ - return the number of people following the user
+        /apiendpoint/following/ - return the number of people the user is following
+    """
     def get(self, request: HttpRequest, user_id: int, count_type: str):
         try:
             user = Users.objects.get(user_id__exact=user_id)
@@ -21,10 +25,13 @@ class UserCounts(View):
             count = user.posts_set.count()
 
         elif count_type.lower() == 'followers':
-            # TODO - this needs to be done when we create followers model
-            count = 23 #get this from followers
+            count = user.follower_count
+
+        elif count_type.lower() == 'following':
+            count = user.following.count()
 
         return JSONResponse.new(code=200, message='success', count=count)
+
 
 
 class UserDescription(View):
@@ -45,14 +52,17 @@ class UserDescription(View):
         return JSONResponse.new(code=200, message='success', description=description)
 
     def post(self, request: HttpRequest):
-        req_body = json.loads(request.body.decode('UTF-8'))
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
         try:
-            user = Users.objects.get(user_id__exact=req_body['userid'])
+            user = Users.objects.get(user_id__exact=req_json['userid'])
         except ObjectDoesNotExist:
-            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(req_body['userid']))
+            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(req_json['userid']))
 
-        new_desc = req_body['description']
+        new_desc = req_json.get('description', '')
         if len(new_desc) < 1 or len(new_desc) > 255:
             return JSONResponse.new(code=400, message='description doesn\'t meet the length requirements: {}'.format(len(new_desc)))
 
@@ -61,14 +71,64 @@ class UserDescription(View):
         return JSONResponse.new(code=200, message='success')
 
 
-class UserFollowers(View):
-    """ GET: can check if the user is following another user
-        POST: can follow or unfollow a user
-    """
-    def get(self, request: HttpRequest):
-        #TODO - after we setup the followers model
-        pass
 
+class UserFollowAdd(View):
+    """ Add a new follower: user must be logged in to add new followers
+        required json object: {
+            'userid': the user id of the user who will add a new follower,
+            'username': the username of the person we want to follow
+        }
+        returned json object: {
+            'followercount': the new follower count
+        }
+    """
     def post(self, request: HttpRequest):
-        #TODO - after we setup the followers model
-        pass
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
+
+        if request.session.get('{}'.format(req_json['userid']), False) is False:
+            return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
+
+        try:
+            user = Users.objects.get(user_id__exact=req_json['userid'])
+            follower = Users.objects.get(user_name__exact=req_json['username'])
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
+
+        user.following.add(follower)
+        user.follower_count += 1
+        user.save()
+        return JSONResponse.new(code=200, message='success', followercount=user.follower_count)
+
+
+class UserFollowRemove(View):
+    """ Remove a follower: user must be logged in to remove a followers
+        required json object: {
+            'userid': the user id of the user who remove the follower,
+            'username': the username of the user to remove,
+        }
+        returned json object: {
+            'followercount': the new follower count
+        }
+    """
+    def post(self, request: HttpRequest):
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
+
+        if request.session.get('{}'.format(req_json['userid']), False) is False:
+            return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
+
+        try:
+            user = Users.objects.get(user_id__exact=req_json.get('userid'))
+            follower = user.following.get(user_name__exact=req_json.get('username'))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
+
+        user.follower_count -= 1
+        user.following.remove(follower)
+        user.save()
+        return JSONResponse.new(code=200, message='success', followercount=user.follower_count)

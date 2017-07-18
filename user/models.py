@@ -18,7 +18,6 @@ class Users(models.Model):
     follower_count = models.IntegerField(default=0)
     following = models.ManyToManyField('self', symmetrical=False)
     # profile_pic
-    # friends_id = many to many key (why not a list of user_id?)
 
     def __str__(self):
         return "{}, {}: {}".format(self.last_name, self.first_name, self.email)
