@@ -329,8 +329,14 @@ class PostReport(View):
         post.report_count += 1
         post.save(update_fields=['report_count'])
 
-        #TODO - send an email to the reporter
-
+        # send an email to the reporter
+        send_mail(
+            'SnapLife post reported',
+            'Thank you for reporting post {}. This post will now be under review'.format(post.message_title),
+            settings.EMAIL_HOST_USER,
+            [req_json.get('email')],
+            fail_silently=True
+        )
         send_mail(
             'Report for post ID {}, post name {}'.format(post.post_id, post.image_name),
             'Reported by {}\nReport count: {}'.format(req_json.get('email'), post.report_count),
