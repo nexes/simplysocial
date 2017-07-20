@@ -15,9 +15,9 @@ class Users(models.Model):
     last_login_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     about = models.CharField(max_length=255, blank=True)
+    profile_url = models.CharField(max_length=100, blank=True)
     follower_count = models.IntegerField(default=0)
     following = models.ManyToManyField('self', symmetrical=False)
-    # profile_pic
 
     def __str__(self):
         return "{}, {}: {}".format(self.last_name, self.first_name, self.email)
