@@ -1,7 +1,7 @@
 """ handling view requests for user data """
-from lifesnap.util import JSONResponse
-from user.models import Users
 import json
+from user.models import Users
+from lifesnap.util import JSONResponse
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest

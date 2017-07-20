@@ -1,5 +1,6 @@
-from user.models import Users
 import json
+from base64 import b64encode
+from user.models import Users
 
 from django.test import TestCase, Client, tag
 from django.core.signing import Signer
@@ -82,12 +83,17 @@ class CreateUserTestCase(TestCase):
 
     def test_good_new_user(self):
         """ make sure a new user is created when the correct data is passed """
+
+        with open('/Users/jberria/Pictures/test1sprites0.png', 'rb') as f:
+            encode = b64encode(f.read())
+
         resp = self._create_json_request({
             'username': 'mmouse',
             'firstname': 'mickey',
             'lastname': 'mouse',
             'email': 'mmouse@disney.com',
-            'password': 'topsecret123'
+            'password': 'topsecret123',
+            'profilepic': encode.decode('UTF-8')
         })
 
         print('\tgood_new_user: status_code = {}: {}'.format(resp.status_code, resp.json()['message']))

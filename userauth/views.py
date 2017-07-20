@@ -1,10 +1,10 @@
 """ handles authenticating a user, or creating/deleting a new user """
-from lifesnap.util import JSONResponse
-from lifesnap.aws import AWS
-from user.models import Users
-from secrets import token_hex
-from uuid import uuid4
 import json
+from uuid import uuid4
+from secrets import token_hex
+from user.models import Users
+from lifesnap.aws import AWS
+from lifesnap.util import JSONResponse
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest
@@ -70,11 +70,12 @@ class AuthUserCreate(View):
             'firstname': 'the first name <required>',
             'lastname': 'the last name <required>',
             'email': 'the email <optional>',
-            'about': 'about text <optional>
+            'about': 'about text <optional>,
+            'profilepic': base64 encode picture for the profile pic <optional>
         }
         sucessfull creation will return the user_id of the new user.
     """
-    def check_required_inputs(self, items: [str]):
+    def _check_required_inputs(self, items: [str]):
         """ check if each item passed is both not empty and the correct length """
         for item in items:
             count = len(item)
@@ -95,7 +96,7 @@ class AuthUserCreate(View):
         _password = request_json.get('password')
 
         try:
-            self.check_required_inputs([
+            self._check_required_inputs([
                 _user_name,
                 _first_name,
                 _last_name,
@@ -121,6 +122,13 @@ class AuthUserCreate(View):
             new_user.email = request_json.get('email', '{}@noemail.set'.format(_user_name))
             new_user.about = request_json.get('about', '')
             new_user.last_login_date = timezone.now()
+
+            if request_json.get('profilepic') is not None:
+                aws = AWS('snap-life')
+                key_name = '{}.png'.format(request_json.get('profilepic'))
+                url = aws.upload_profile_image(new_user.user_name, key_name)
+
+                new_user.profile_url = url
 
             try:
                 new_user.save()
@@ -176,6 +184,7 @@ class AuthUserDelete(View):
                 post_key_names.append(post.image_name)
 
             aws.remove_images(post_key_names)
+            aws.remove_profile_image(user.user_name)
             user.delete()
         else:
             return JSONResponse.new(code=400, message='username {}, or password {} is incorrect'.format(resp_json.get('username'), resp_json.get('password')))
