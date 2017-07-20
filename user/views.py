@@ -1,5 +1,6 @@
 """ handling view requests for user data """
 import json
+from lifesnap.aws import AWS
 from user.models import Users
 from lifesnap.util import JSONResponse
 
@@ -88,7 +89,7 @@ class UserFollowAdd(View):
         except json.JSONDecodeError:
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
-        if request.session.get('{}'.format(req_json['userid']), False) is False:
+        if request.session.get('{}'.format(req_json.get('userid')), False) is False:
             return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
 
         try:
@@ -119,7 +120,7 @@ class UserFollowRemove(View):
         except json.JSONDecodeError:
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
-        if request.session.get('{}'.format(req_json['userid']), False) is False:
+        if request.session.get('{}'.format(req_json.get('userid')), False) is False:
             return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
 
         try:
@@ -132,3 +133,39 @@ class UserFollowRemove(View):
         user.following.remove(follower)
         user.save()
         return JSONResponse.new(code=200, message='success', followercount=user.follower_count)
+
+
+
+class UserProfileUpdate(View):
+    """ Update the users profile picture, the user must be logged in
+        required json object: {
+            'userid': the userid who wants to update the profile picture,
+            'profilepic': the base64 encoded profile image
+        }
+        returned json object: {
+            'url': the url for the profile picture. can be used inside <image>
+        }
+    """
+    def post(self, request: HttpRequest):
+        aws = AWS('snap-life')
+
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
+
+        try:
+            user = Users.objects.get(user_id__exact=req_json.get('userid'))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user {} is not found'.format(req_json.get('userid')))
+
+        if request.session.get('{}'.format(req_json.get('userid')), False) is False:
+            return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
+
+        #is there a better way?
+        aws.remove_profile_image('profilepics/{}.png'.format(user.user_name))
+        url = aws.upload_profile_image('profilepic/{}.png'.format(user.user_name), req_json.get('profilepic'))
+
+        user.profile_url = url
+        user.save(update_fields=['profile_url'])
+        return JSONResponse.new(code=200, message='success', url=url)
