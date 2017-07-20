@@ -21,5 +21,6 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^snaplife/api/auth/', include('userauth.urls')),
     url(r'^snaplife/api/user/', include('user.urls')),
-    url(r'^snaplife/api/user/posts/', include('post.urls'))
+    url(r'^snaplife/api/user/posts/', include('post.urls')),
+    url(r'^snaplife/api/user/posts/comment/', include('comment.urls'))
 ]

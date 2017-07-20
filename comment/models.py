@@ -13,3 +13,6 @@ class Comments(models.Model):
     like_count = models.IntegerField(default=0)
     report_count = models.IntegerField(default=0)
     post = models.ForeignKey(Posts, on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return '{}: by {}'.format(self.comment_id, self.author_id)
