@@ -58,12 +58,14 @@ class UserPostCreate(TestCase):
         resp = self.client.post(url, data, content_type='application/json')
         print('\tpost_create: creating new post for user: {}, postid {}'.format(
             resp.status_code, resp.json()['postid']))
+
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
 
         resp2 = self.client.get(url2)
         print('\tpost_create: checking post count for user: count = {}'.format(
             resp2.json()['count']))
+
         self.assertEqual(resp2.status_code, 200)
         self.assertContains(resp2, 'count')
 

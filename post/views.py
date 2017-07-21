@@ -354,7 +354,8 @@ class PostReport(View):
 class PostCommentCount(View):
     """ returns the number of comments this post has
         GET: return json object {
-            'count': the number of post comments
+            'count': the number of post comments,
+            'commentids': a list a comment ids
         }
     """
     def get(self, request: HttpRequest, postid: str):
@@ -366,4 +367,9 @@ class PostCommentCount(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='post id {} is not found'.format(postid))
 
-        return JSONResponse.new(code=200, message='success', count=count)
+        comment_list = []
+        comments = post.comment_set.all()
+        for comment in comments:
+            comment_list.append(comment.comment_id)
+
+        return JSONResponse.new(code=200, message='success', count=count, commentids=comment_list)
