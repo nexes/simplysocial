@@ -104,6 +104,7 @@ class UserFollowAdd(View):
         return JSONResponse.new(code=200, message='success', followercount=user.follower_count)
 
 
+
 class UserFollowRemove(View):
     """ Remove a follower: user must be logged in to remove a followers
         required json object: {

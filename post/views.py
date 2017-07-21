@@ -6,10 +6,11 @@ from lifesnap.util import JSONResponse
 
 from user.models import Users
 from post.models import Posts
+from comment.models import Comments
 from django.views import View
 from django.conf import settings
 from django.core.mail import send_mail
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -24,7 +25,7 @@ class PostCreate(View):
         }
     """
     def post(self, request: HttpRequest):
-        s3_bucket = AWS('snap-life')
+        S3 = AWS('snap-life')
         new_post = Posts()
 
         try:
@@ -45,7 +46,7 @@ class PostCreate(View):
         new_post.post_id = uuid4().time_mid
         image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
 
-        url = s3_bucket.upload_image(image_name, req_json['image'])
+        url = S3.upload_image(image_name, req_json['image'])
 
         new_post.message = req_json.get('message', '')
         new_post.message_title = req_json.get('title', '')
@@ -68,9 +69,7 @@ class PostDelete(View):
         if both postid and title is present, postid will be prefered.
     """
     def post(self, request: HttpRequest):
-        s3_bucket = AWS('snap-life')
-        resp = JsonResponse({})
-        resp.status_code = 200
+        S3 = AWS('snap-life')
 
         try:
             req_json = json.loads(request.body.decode('UTF-8'))
@@ -86,21 +85,25 @@ class PostDelete(View):
         if request.session.get('{}'.format(user.user_id), False) is False:
             return JSONResponse.new(code=400, message='user is not signed in')
 
-        if req_json.get('postid') is None and req_json.get('title') is None:
-            return JSONResponse.new(code=400, message='postid or title must be present')
-
         try:
-            if req_json.get('postid') is not None:
+            if req_json.get('postid'):
                 post = user.posts_set.get(post_id__exact=int(req_json['postid']))
-
-            elif req_json.get('title') is not None:
+            elif req_json.get('title'):
                 post = user.posts_set.get(message_title__exact=req_json['title'])
+            else:
+                return JSONResponse.new(code=400, message='postid or title must be present')
+
+            comments = post.comments_set.all()
+
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json['postid']))
 
-        s3_bucket.remove_image(key_name=post.image_name)
-        post.delete()
+        S3.remove_image(key_name=post.image_name)
 
+        for comment in comments:
+            comment.delete()
+
+        post.delete()
         return JSONResponse.new(code=200, message='success', postcount=user.posts_set.count())
 
 
@@ -346,3 +349,21 @@ class PostReport(View):
         )
 
         return JSONResponse.new(code=200, message='success', count=post.report_count)
+
+
+class PostCommentCount(View):
+    """ returns the number of comments this post has
+        GET: return json object {
+            'count': the number of post comments
+        }
+    """
+    def get(self, request: HttpRequest, postid: str):
+        postid = int(postid)
+
+        try:
+            post = Posts.objects.get(post_id__exact=postid)
+            count = post.comments_set.count()
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='post id {} is not found'.format(postid))
+
+        return JSONResponse.new(code=200, message='success', count=count)
