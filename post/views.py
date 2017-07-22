@@ -274,6 +274,7 @@ class PostLike(View):
             'like': the like count
         }
         POST: required json object {
+            'userid': the user id of the logged in user.
             'postid': postid
         }
         POST: returned json object {
@@ -302,6 +303,10 @@ class PostLike(View):
             post = Posts.objects.get(post_id__exact=req_json.get('postid'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json.get('postid')))
+
+        user_id = req_json.get('userid')
+        if request.session.get('{}'.format(user_id), False) is False:
+            return JSONResponse.new(code=400, message='user {} is not logged in'.format(user_id))
 
         post.like_count += 1
         post.save(update_fields=['like_count'])
@@ -368,7 +373,7 @@ class PostCommentCount(View):
             return JSONResponse.new(code=400, message='post id {} is not found'.format(postid))
 
         comment_list = []
-        comments = post.comment_set.all()
+        comments = post.comments_set.all()
         for comment in comments:
             comment_list.append(comment.comment_id)
 
