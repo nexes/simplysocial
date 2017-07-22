@@ -300,7 +300,7 @@ class PostLike(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='postid {} was not found'.format(postid))
 
-        return JSONResponse.new(code=200, message='success', postid=post.post_id, like=post.like_count)
+        return JSONResponse.new(code=200, message='success', postid=post.post_id, likecount=post.like_count)
 
     def post(self, request: HttpRequest):
         try:

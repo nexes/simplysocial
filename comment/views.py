@@ -82,7 +82,7 @@ class CommentDelete(View):
 class CommentLike(View):
     """ Return or update the like count for the comment
         GET: returned json object {
-            'like': the like count
+            'count': the like count
         }
         POST: required json object {
             'userid': the user id of the user who is liking the comment,
@@ -100,7 +100,7 @@ class CommentLike(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='comment id {} is not found'.format(commentid))
 
-        return JSONResponse.new(code=200, message='success', like=comment.like_count)
+        return JSONResponse.new(code=200, message='success', count=comment.like_count)
 
     def post(self, request: HttpRequest):
         try:
