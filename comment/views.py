@@ -76,3 +76,47 @@ class CommentDelete(View):
 
         comment.delete()
         return JSONResponse.new(code=200, message='success', commentid=comment.comment_id)
+
+
+
+class CommentLike(View):
+    """ Return or update the like count for the comment
+        GET: returned json object {
+            'like': the like count
+        }
+        POST: required json object {
+            'userid': the user id of the user who is liking the comment,
+            'commentid': the comment the user is liking
+        }
+        POST: returned json object {
+            'count': the new like count
+        }
+    """
+    def get(self, request: HttpRequest, commentid: str):
+        commentid = int(commentid)
+
+        try:
+            comment = Comments.objects.get(comment_id__exact=commentid)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='comment id {} is not found'.format(commentid))
+
+        return JSONResponse.new(code=200, message='success', like=comment.like_count)
+
+    def post(self, request: HttpRequest):
+        try:
+            req_json = json.loads(request.body.decod('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
+
+        try:
+            user = User.objects.get(user_id__exact=req_json.get('userid'))
+            comment = Comments.objects.get(comment_id__exact=req_json.get('commentid'))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='userid {} or commentid {} is not found'.format(req_json.get('userid'), req_json.get('commentid')))
+
+        if request.session.get('{}'.format(user.user_id), False) is False:
+            return JSONResponse.new(code=400, message='user {} is not logged in'.format(user.user_id))
+
+        comment.like_count += 1
+        comment.save()
+        return JSONResponse.new(code=200, message='success', count=comment.like_count)
