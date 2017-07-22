@@ -212,7 +212,11 @@ class UserPostCreate(TestCase):
         post_id = resp.json()['postid']
         url_like_get = '/snaplife/api/user/posts/like/{}/'.format(post_id)
 
-        resp = self.client.post(url_like, json.dumps({'postid': post_id}), content_type='application/json')
+        resp = self.client.post(url_like, json.dumps({
+            'postid': post_id,
+            'userid': self.user.user_id
+            }), content_type='application/json')
+
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
 

@@ -136,6 +136,14 @@ class UserDescriptionTest(TestCase):
 
 @tag('usertest')
 class UserFollowers(TestCase):
+    def _login_user(self, username: str, password: str):
+        url = '/snaplife/api/auth/user/login/'
+        data = json.dumps({'username': username, 'password': password})
+        resp = self.client.post(url, data, content_type='application/json')
+
+        print('\tuser post: login status {}'.format(resp.status_code == 200))
+        self.assertEqual(resp.status_code, 200)
+
     def _create_user(self, username: str, password: str, userid: int):
         salt = 'blahfffff{}j349'.format(password)
         signer = Signer(salt=salt)
@@ -166,6 +174,8 @@ class UserFollowers(TestCase):
         jim = self._create_user('jimjim', 'password123', 123)
         jane = self._create_user('jjane', '123455', 344)
         sue = self._create_user('sueB', 'pass567word', 564)
+
+        self._login_user(jim.user_name, 'password123')
 
         self.client.post(url_new, json.dumps({'userid': jim.user_id, 'username':jane.user_name}), content_type='application/json')
         resp = self.client.post(url_new, json.dumps({'userid': jim.user_id, 'username':sue.user_name}), content_type='application/json')
