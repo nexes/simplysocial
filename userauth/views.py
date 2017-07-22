@@ -21,7 +21,9 @@ class AuthUserLogin(View):
             'username': 'the username',
             'password': 'the password'
         }
-        sucessfull login will return the users_id, this is needed for other requestes.
+        returned json object {
+            'userid': the userid of the now logged in user
+        }
     """
 
     def _verify_user_password(self, user: Users, pass_check: str)-> bool:

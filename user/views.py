@@ -99,9 +99,10 @@ class UserFollowAdd(View):
             return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
 
         user.following.add(follower)
-        user.follower_count += 1
+        follower.follower_count += 1
+        follower.save()
         user.save()
-        return JSONResponse.new(code=200, message='success', followercount=user.follower_count)
+        return JSONResponse.new(code=200, message='success', followercount=user.following.count())
 
 
 
@@ -130,10 +131,11 @@ class UserFollowRemove(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
 
-        user.follower_count -= 1
+        follower.follower_count -= 1
         user.following.remove(follower)
+        follower.save()
         user.save()
-        return JSONResponse.new(code=200, message='success', followercount=user.follower_count)
+        return JSONResponse.new(code=200, message='success', followercount=user.following.count())
 
 
 
