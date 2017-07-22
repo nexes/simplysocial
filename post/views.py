@@ -26,7 +26,6 @@ class PostCreate(View):
     """
     def post(self, request: HttpRequest):
         S3 = AWS('snap-life')
-        new_post = Posts()
 
         try:
             req_json = json.loads(request.body.decode('UTF-8'))
@@ -43,10 +42,11 @@ class PostCreate(View):
             return JSONResponse.new(code=400, message='user is not signed in')
 
         #create new post and assign to the user
+        new_post = Posts()
         new_post.post_id = uuid4().time_mid
         image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
 
-        url = S3.upload_image(image_name, req_json['image'])
+        url = S3.upload_image(image_name, req_json.get('image'))
 
         new_post.message = req_json.get('message', '')
         new_post.message_title = req_json.get('title', '')
@@ -55,7 +55,16 @@ class PostCreate(View):
         new_post.save()
         user.posts_set.add(new_post)
 
-        return JSONResponse.new(code=200, message='success', postid=new_post.post_id)
+        p = dict({
+            'postid': new_post.post_id,
+            'message': new_post.message,
+            'title': new_post.message_title,
+            'views': new_post.view_count,
+            'likes': new_post.like_count,
+            'imageurl': new_post.image_url,
+            'date': new_post.creation_date.isoformat()
+        })
+        return JSONResponse.new(code=200, message='success', post=p)
 
 
 

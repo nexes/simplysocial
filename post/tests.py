@@ -57,7 +57,7 @@ class UserPostCreate(TestCase):
 
         resp = self.client.post(url, data, content_type='application/json')
         print('\tpost_create: creating new post for user: {}, postid {}'.format(
-            resp.status_code, resp.json()['postid']))
+            resp.status_code, resp.json()['post']['postid']))
 
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'success')
@@ -183,7 +183,7 @@ class UserPostCreate(TestCase):
 
         updated_data = json.dumps({
             'userid': self.user.user_id,
-            'postid': resp.json()['postid'],
+            'postid': resp.json()['post']['postid'],
             'title': 'This is a new and improved title',
             'message': 'this is a new and impoved message for the postAAAAAAAA!!!!!'
         })
@@ -240,7 +240,7 @@ class UserPostCreate(TestCase):
             'userid': self.user.user_id
         })
         resp = self.client.post(url_create, data, content_type='application/json')
-        postid = resp.json()['postid']
+        postid = resp.json()['post']['postid']
 
         data1 = json.dumps({
             'postid': postid,
