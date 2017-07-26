@@ -6,13 +6,26 @@ from user.models import Users
 from lifesnap.aws import AWS
 from lifesnap.util import JSONResponse
 
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpRequest
-from django.core.signing import Signer
-from django.db import IntegrityError
-from django.utils import timezone
 from django.views import View
+from django.utils import timezone
+from django.http import HttpRequest
+from django.db import IntegrityError
+from django.core.signing import Signer
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
+
+
+class EnsureCSRFToken(View):
+    """ Since this is an API endpoint only backend, we are not rendering any templates, no HTML is being returned
+        Because of this, if the client doesn't already have our csrftoken set in their cookie they will receive a
+        403 on all requests. Calling this GET endpoint before any other (only once is needed) will ensure to set the
+        csrf token which is needed in the header of all requests for security.
+    """
+    @method_decorator(ensure_csrf_cookie)
+    def get(self, request: HttpRequest):
+        return JSONResponse.new(code=200, message='success')
 
 
 class AuthUserLogin(View):
@@ -25,7 +38,6 @@ class AuthUserLogin(View):
             'userid': the userid of the now logged in user
         }
     """
-
     def _verify_user_password(self, user: Users, pass_check: str)-> bool:
         signer = Signer(salt=user.salt_hash)
         user_pass_hash = user.password_hash
@@ -83,7 +95,6 @@ class AuthUserCreate(View):
             count = len(item)
             if count == 0 or count > 40:
                 raise ValueError('Item doesn\'t meet length requirements.', item, count)
-
 
     def post(self, request: HttpRequest):
         try:
