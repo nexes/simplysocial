@@ -35,6 +35,19 @@ class UserCounts(View):
 
 
 
+class UserOnline(View):
+    """ request if the user is online 
+        /apiendpoint/(username) - return true or false if this username is currently logged in
+    """
+    def get(self, request: HttpRequest, username: str):
+        try:
+            user = Users.objects.get(username__exact=username)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user name {} is not found'.format(username))
+
+        return JSONResponse.new(code=200, message='success', loggedin=user.is_active)
+
+
 class UserDescription(View):
     """ get or set the users description
         GET: apiurl/<the user id>/
