@@ -94,6 +94,7 @@ class AuthUserLogoff(View):
             return JSONResponse.new(code=400, message='user {} is not found'.format(request_json.get('userid')))
 
         user.is_active = False
+        user.save()
         del request.session['{}'.format(user.user_id)]
         return JSONResponse.new(code=200, message='success', userid=user.user_id)
 
