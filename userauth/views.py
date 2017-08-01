@@ -16,7 +16,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 
-
 class EnsureCSRFToken(View):
     """ Since this is an API endpoint only backend, we are not rendering any templates, no HTML is being returned
         Because of this, if the client doesn't already have our csrftoken set in their cookie they will receive a
@@ -38,6 +37,7 @@ class AuthUserLogin(View):
             'userid': the userid of the now logged in user
         }
     """
+
     def _verify_user_password(self, user: Users, pass_check: str)-> bool:
         signer = Signer(salt=user.salt_hash)
         user_pass_hash = user.password_hash
@@ -61,19 +61,41 @@ class AuthUserLogin(View):
 
         if self._verify_user_password(user, request_json.get('password')):
             user.last_login_date = timezone.now()
+            user.is_active = True
             request.session['{}'.format(user.user_id)] = True
             user.save()
         else:
             message = 'username {}, or password {} is incorrect'.format(
                 request_json.get('username'),
                 request_json.get('password'))
-            return JSONResponse.new(code=400, message=message)
+            return JSONResponse.new(code=403, message=message)
 
         return JSONResponse.new(code=200, message='success', userid=user.user_id)
 
 
 class AuthUserLogoff(View):
-    pass
+    """ user log off
+        method = POST: required json object {
+            'userid': the users unique user id
+        }
+        returned json object {
+            'userid': the user id of the now logged off user
+        }
+    """
+    def post(self, request: HttpRequest):
+        try:
+            request_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='request decode error, bad data sent to the server')
+
+        try:
+            user = Users.objects.get(user_id__exact=request_json.get('userid'))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user {} is not found'.format(request_json.get('userid')))
+
+        user.is_active = False
+        del request.session['{}'.format(user.user_id)]
+        return JSONResponse.new(code=200, message='success', userid=user.user_id)
 
 
 class AuthUserCreate(View):
@@ -102,7 +124,7 @@ class AuthUserCreate(View):
         except json.JSONDecodeError:
             return JSONResponse.new(code=400, message='request decode error, bad data sent to the server')
 
-        #these are required keys
+        # these are required keys
         _user_name = request_json.get('username')
         _first_name = request_json.get('firstname')
         _last_name = request_json.get('lastname')
@@ -121,7 +143,7 @@ class AuthUserCreate(View):
         try:
             Users.objects.get(user_name__exact=_user_name)
         except ObjectDoesNotExist:
-            #GOOD, lets create a new user
+            # GOOD, lets create a new user
             new_user = Users()
             salt = token_hex(16)
             signer = Signer(salt=salt)
@@ -146,8 +168,8 @@ class AuthUserCreate(View):
             try:
                 new_user.save()
             except IntegrityError as err:
-                #if this is because we have a collision with our random numbers
-                #hash, userID etc. re-create them
+                # if this is because we have a collision with our random numbers
+                # hash, userID etc. re-create them
                 return JSONResponse.new(code=500, message='username and email need to be unique')
 
         else:
