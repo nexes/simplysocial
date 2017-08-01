@@ -41,7 +41,7 @@ class UserOnline(View):
     """
     def get(self, request: HttpRequest, username: str):
         try:
-            user = Users.objects.get(username__exact=username)
+            user = Users.objects.get(user_name__exact=username)
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user name {} is not found'.format(username))
 
