@@ -6,6 +6,7 @@ from lifesnap.util import JSONResponse
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest
+from django.utils import timezone
 from django.views import View
 
 
@@ -40,10 +41,19 @@ class UserOnline(View):
         /apiendpoint/(username) - return true or false if this username is currently logged in
     """
     def get(self, request: HttpRequest, username: str):
+        print('useronline get')
         try:
             user = Users.objects.get(user_name__exact=username)
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user name {} is not found'.format(username))
+
+        # If the user is still showing active after 24 hours, log the user off.
+        now = timezone.now()
+        delta_time = (now - user.last_login_date).total_seconds()
+        if ((delta_time / 3600) / 24) >= 1:
+            del request.session['{}'.format(user.user_id)]
+            user.is_active = False
+            user.save()
 
         return JSONResponse.new(code=200, message='success', loggedin=user.is_active)
 

@@ -57,7 +57,7 @@ class AuthUserLogin(View):
             return JSONResponse.new(code=400, message='user {} is not found'.format(request_json.get('username')))
 
         if request.session.get('{}'.format(user.user_id), False) is True:
-            return JSONResponse.new(code=400, message='user {} is already sigend in'.format(request_json.get('username')))
+            return JSONResponse.new(code=400, message='user {} is already signed in'.format(request_json.get('username')))
 
         if self._verify_user_password(user, request_json.get('password')):
             user.last_login_date = timezone.now()
