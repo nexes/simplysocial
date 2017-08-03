@@ -56,8 +56,8 @@ class AuthUserLogin(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user {} is not found'.format(request_json.get('username')))
 
-        if request.session.get('{}'.format(user.user_id), False) is True:
-            return JSONResponse.new(code=400, message='user {} is already signed in'.format(request_json.get('username')))
+        if request.session.get('{}'.format(user.user_id), False) is True and user.is_active is True:
+            return JSONResponse.new(code=200, message='user {} is already signed in'.format(request_json.get('username')), userid=user.user_id)
 
         if self._verify_user_password(user, request_json.get('password')):
             user.last_login_date = timezone.now()
@@ -65,9 +65,7 @@ class AuthUserLogin(View):
             request.session['{}'.format(user.user_id)] = True
             user.save()
         else:
-            message = 'username {}, or password {} is incorrect'.format(
-                request_json.get('username'),
-                request_json.get('password'))
+            message = 'Username \"{}\" or password is incorrect'.format(request_json.get('username'))
             return JSONResponse.new(code=403, message=message)
 
         return JSONResponse.new(code=200, message='success', userid=user.user_id)
