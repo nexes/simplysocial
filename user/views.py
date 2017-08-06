@@ -37,11 +37,10 @@ class UserCounts(View):
 
 
 class UserOnline(View):
-    """ request if the user is online 
+    """ request if the user is online
         /apiendpoint/(username) - return true or false if this username is currently logged in
     """
     def get(self, request: HttpRequest, username: str):
-        print('useronline get')
         try:
             user = Users.objects.get(user_name__exact=username)
         except ObjectDoesNotExist:
@@ -51,7 +50,9 @@ class UserOnline(View):
         now = timezone.now()
         delta_time = (now - user.last_login_date).total_seconds()
         if ((delta_time / 3600) / 24) >= 1:
-            del request.session['{}'.format(user.user_id)]
+            if '{}'.format(user.user_id) in request.session:
+                del request.session['{}'.format(user.user_id)]
+
             user.is_active = False
             user.save()
 

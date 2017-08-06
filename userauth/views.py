@@ -115,7 +115,7 @@ class AuthUserCreate(View):
         for item in items:
             count = len(item)
             if count == 0 or count > 40:
-                raise ValueError('Item doesn\'t meet length requirements.', item, count)
+                raise ValueError('Item {} doesn\'t meet length requirements.'.format(item))
 
     def post(self, request: HttpRequest):
         try:
@@ -137,7 +137,7 @@ class AuthUserCreate(View):
                 _password
             ])
         except ValueError as err:
-            return JSONResponse.new(code=400, message='{}, len {}, incorrect size requirement'.format(err.args[0], err.args[1]))
+            return JSONResponse.new(code=400, message='{}'.format(err.args[0]))
 
         try:
             Users.objects.get(user_name__exact=_user_name)
