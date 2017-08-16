@@ -18,8 +18,8 @@ from django.core.exceptions import ObjectDoesNotExist
 class PostCreate(View):
     """ a signed in user can create a new post
         POST: required json object {
-            'image': the photo to post, the front end will encode to base64 before sending.
-            'message': optional - if you want a message with the photo,
+            'image': optional, the photo to post, the front end will encode to base64 before sending.
+            'message': if you want a message with the photo,
             'title': optional - if you want to title your post,
             'userid': the users user_id
         }
@@ -44,14 +44,19 @@ class PostCreate(View):
         #create new post and assign to the user
         new_post = Posts()
         new_post.post_id = uuid4().time_mid
-        image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
 
-        url = S3.upload_image(image_name, req_json.get('image'))
+        if req_json.get('image', None) is not None:
+            image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
+            url = S3.upload_image(image_name, req_json.get('image'))
 
-        new_post.message = req_json.get('message', '')
+            new_post.image_name = image_name
+            new_post.image_url = url
+        else:
+            new_post.image_name = ''
+            new_post.image_url = ''
+
+        new_post.message = req_json.get('message')
         new_post.message_title = req_json.get('title', '')
-        new_post.image_name = image_name
-        new_post.image_url = url
         new_post.save()
         user.posts_set.add(new_post)
 
