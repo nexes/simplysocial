@@ -33,7 +33,7 @@ class PostCreate(View):
             return JSONResponse.new(code=400, message='request decode error, bad data sent to the server')
 
         try:
-            user = Users.objects.get(user_id__exact=req_json['userid'])
+            user = Users.objects.get(user_id__exact=req_json.get('userid', ''))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user id {} is not found.'.format(req_json['userid']))
 
