@@ -47,6 +47,7 @@ class UserOnline(View):
             return JSONResponse.new(code=400, message='user name {} is not found'.format(username))
 
         # If the user is still showing active after 24 hours, log the user off.
+        uid = user.user_id
         now = timezone.now()
         delta_time = (now - user.last_login_date).total_seconds()
         if ((delta_time / 3600) / 24) >= 1:
@@ -54,9 +55,10 @@ class UserOnline(View):
                 del request.session['{}'.format(user.user_id)]
 
             user.is_active = False
+            uid = 0
             user.save()
 
-        return JSONResponse.new(code=200, message='success', loggedin=user.is_active)
+        return JSONResponse.new(code=200, message='success', loggedin=user.is_active, userid=uid)
 
 
 class UserDescription(View):
