@@ -46,6 +46,13 @@ class UserOnline(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user name {} is not found'.format(username))
 
+        # if there is no session data, the user is either not logged in, or is accessing from outside the original session.
+        # either way, a log in is required here
+        if request.session.get('{}'.format(user.user_id), False) is False:
+            user.is_active = False
+            user.save()
+            return JSONResponse.new(code=200, message='success', loggedin=False, userid=0)
+
         # If the user is still showing active after 24 hours, log the user off.
         uid = user.user_id
         now = timezone.now()
