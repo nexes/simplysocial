@@ -223,6 +223,51 @@ class PostSearchTitle(View):
         return JSONResponse.new(code=200, message='success', posts=post_list)
 
 
+class PostSearchUser(View):
+    """ return posts from the user
+        GET: search for the users posts, this will include shared posts
+
+        returned json object: {
+            'code': http status_code,
+            'message': 'server message, 'success' or 'error message',
+            'post': [array of json objects {
+                'postid': post id,
+                'message': post message,
+                'title': post title,
+                'views': view count,
+                'likes': like count,
+                'imageurl': the http url where the image can be found,
+                'date': the date the post was created
+            }]
+        }
+    """
+    def get(self, request: HttpRequest, userid: str, count: str):
+        count = int(count)
+        if count < 0:
+            count *= -1
+
+        try:
+            user = Users.objects.get(user_id__exact=userid)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='userid {} is not found'.format(userid))
+
+        posts = user.posts_set.all()[:count]
+        post_list = []
+
+        for post in posts:
+            p = dict({
+                'postid': post.post_id,
+                'message': post.message,
+                'title': post.message_title,
+                'views': post.view_count,
+                'likes': post.like_count,
+                'imageurl': post.image_url,
+                'date': post.creation_date.isoformat()
+            })
+            post_list.append(p)
+
+        return JSONResponse.new(code=200, message='success', posts=post_list)
+
 
 class PostSearchDate(View):
     """ return posts from the specified time
