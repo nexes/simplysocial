@@ -35,6 +35,8 @@ class AuthUserLogin(View):
         }
         returned json object {
             'userid': the userid of the now logged in user
+            'firstname': the users first name
+            'lastname': the users last name
         }
     """
 
@@ -57,7 +59,13 @@ class AuthUserLogin(View):
             return JSONResponse.new(code=400, message='user {} is not found'.format(request_json.get('username')))
 
         if request.session.get('{}'.format(user.user_id), False) is True and user.is_active is True:
-            return JSONResponse.new(code=200, message='user {} is already signed in'.format(request_json.get('username')), userid=user.user_id)
+            return JSONResponse.new(
+                code=200,
+                message='user {} is already signed in'.format(request_json.get('username')),
+                userid=user.user_id,
+                firstname=user.first_name,
+                lastname=user.last_name
+            )
 
         if self._verify_user_password(user, request_json.get('password')):
             user.last_login_date = timezone.now()
@@ -68,7 +76,13 @@ class AuthUserLogin(View):
             message = 'Username \"{}\" or password is incorrect'.format(request_json.get('username'))
             return JSONResponse.new(code=403, message=message)
 
-        return JSONResponse.new(code=200, message='success', userid=user.user_id)
+        return JSONResponse.new(
+            code=200,
+            message='success',
+            userid=user.user_id,
+            firstname=user.first_name,
+            lastname=user.last_name
+        )
 
 
 class AuthUserLogoff(View):
