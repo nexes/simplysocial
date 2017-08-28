@@ -68,6 +68,47 @@ class UserOnline(View):
         return JSONResponse.new(code=200, message='success', loggedin=user.is_active, userid=uid)
 
 
+
+class UserAccountSnapshot(View):
+    """ This is usefull instead of making several http calls
+        request to get the the meta data of a users account
+        /apiendpoint/(username)
+
+        returned JSON object: {
+            'firstname': users first name,
+            'lastname': users last name,
+            'email': users email address,
+            'postCount': number of users posts,
+            'following': following count,
+            'followers': followers count,
+            'description': users description,
+            'avatar': url to users profile avatar,
+            'startdate': users creation date
+        }
+    """
+
+    def get(self, request: HttpRequest, user_id: int):
+        try:
+            user = Users.objects.get(user_id__exact=user_id)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(user_id))
+
+        if request.session.get('{}'.format(user.user_id), False) is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
+
+        return JSONResponse.new(
+            code=200,
+            message='success',
+            firstname=user.first_name,
+            lastname=user.last_name,
+            email=user.email,
+            description=user.about,
+            avatar=user.profile_url,
+            startdate=user.creation_date.isoformat(),
+            followers=user.follower_count
+        )
+
+
 class UserDescription(View):
     """ get or set the users description
         GET: apiurl/<the user id>/
@@ -92,9 +133,13 @@ class UserDescription(View):
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
         try:
-            user = Users.objects.get(user_id__exact=req_json['userid'])
+            user = Users.objects.get(user_id__exact=req_json.get('userid'))
         except ObjectDoesNotExist:
-            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(req_json['userid']))
+            return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(req_json.get('userid')))
+
+        # user must be signed in to update the profile description
+        if request.session.get('{}'.format(user.user_id), False) is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         new_desc = req_json.get('description', '')
         if len(new_desc) < 1 or len(new_desc) > 255:
