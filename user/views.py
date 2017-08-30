@@ -99,6 +99,7 @@ class UserAccountSnapshot(View):
         return JSONResponse.new(
             code=200,
             message='success',
+            username=user.user_name,
             firstname=user.first_name,
             lastname=user.last_name,
             email=user.email,
