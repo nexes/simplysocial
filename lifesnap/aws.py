@@ -34,7 +34,7 @@ class AWS(object):
             ACL='public-read',
             Body=image_bytes,
             Bucket=self.bucket_name,
-            Key='profilepic/{}.png'.format(key_name),
+            Key='profilepic/{}'.format(key_name),
             ContentType='image/*',
             ServerSideEncryption='AES256'
         )
