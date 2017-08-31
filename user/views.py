@@ -86,7 +86,6 @@ class UserAccountSnapshot(View):
             'startdate': users creation date
         }
     """
-
     def get(self, request: HttpRequest, user_id: int):
         try:
             user = Users.objects.get(user_id__exact=user_id)
@@ -150,6 +149,45 @@ class UserDescription(View):
         user.save(update_fields=['about'])
         return JSONResponse.new(code=200, message='success')
 
+
+class UserEmail(View):
+    """ Returns the users email address update the users email address
+        POST: required json object {
+            'userid': the user id of the user who will be updated,
+            'email': the new email address
+        }
+        return object {
+            'message': success or not
+            'email': the updated email address
+        }
+    """
+    def get(self, request: HttpRequest, user_id: str):
+        try:
+            user = Users.objects.get(user_id__exact=user_id)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user id {} was not found'.format(user_id))
+
+        email = user.email
+        return JSONResponse.new(code=200, message='success', email=email)
+
+    def post(self, request: HttpRequest):
+        try:
+            req_json = json.loads(request.body.decode('UTF-8'))
+        except json.JSONDecodeError:
+            return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
+
+        try:
+            user = Users.objects.get(user_id__exact=req_json.get('userid'))
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user id {} was not found'.format(user_id))
+
+        new_email = req_json.get('email', None)
+        if new_email and len(new_email) < 255 and len(new_email) > 3:
+            user.email = new_email
+            user.save(update_fields=['email'])
+            return JSONResponse.new(code=200, message='success', email=new_email)
+
+        return JSONResponse.new(code=400, message='bad email', email=new_email)
 
 
 class UserFollowAdd(View):
@@ -245,9 +283,9 @@ class UserProfileUpdate(View):
             return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
 
         #is there a better way?
-        aws.remove_profile_image('profilepics/{}.png'.format(user.user_name))
-        url = aws.upload_profile_image('profilepic/{}.png'.format(user.user_name), req_json.get('profilepic'))
+        aws.remove_profile_image('{}.png'.format(user.user_name))
+        url = aws.upload_profile_image('{}.png'.format(user.user_name), req_json.get('profilepic'))
 
         user.profile_url = url
         user.save(update_fields=['profile_url'])
-        return JSONResponse.new(code=200, message='success', url=url)
+        return JSONResponse.new(code=200, message='success', avatar=url)
