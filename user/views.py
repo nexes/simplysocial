@@ -78,7 +78,7 @@ class UserAccountSnapshot(View):
             'firstname': users first name,
             'lastname': users last name,
             'email': users email address,
-            'postCount': number of users posts,
+            'postcount': number of users posts,
             'following': following count,
             'followers': followers count,
             'description': users description,
@@ -95,6 +95,8 @@ class UserAccountSnapshot(View):
         if request.session.get('{}'.format(user.user_id), False) is False:
             return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
+        post_count = user.posts_set.count()
+        following_count = user.following.count()
         return JSONResponse.new(
             code=200,
             message='success',
@@ -105,7 +107,9 @@ class UserAccountSnapshot(View):
             description=user.about,
             avatar=user.profile_url,
             startdate=user.creation_date.isoformat(),
-            followers=user.follower_count
+            followers=user.follower_count,
+            following=following_count,
+            postcount=post_count
         )
 
 
@@ -143,7 +147,10 @@ class UserDescription(View):
 
         new_desc = req_json.get('description', '')
         if len(new_desc) < 1 or len(new_desc) > 255:
-            return JSONResponse.new(code=400, message='description doesn\'t meet the length requirements: {}'.format(len(new_desc)))
+            return JSONResponse.new(
+                code=400,
+                message='description doesn\'t meet the length requirements: {}'.format(len(new_desc))
+            )
 
         user.about = new_desc
         user.save(update_fields=['about'])
