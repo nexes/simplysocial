@@ -217,6 +217,7 @@ class AuthUserDelete(View):
 
         try:
             user = Users.objects.get(user_name__exact=resp_json.get('username'))
+            user_id = user.user_id
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user {} is not found'.format(resp_json['username']))
 
@@ -229,12 +230,13 @@ class AuthUserDelete(View):
             all_post = user.posts_set.all()
             post_key_names = []
             for post in all_post:
-                post_key_names.append(post.image_name)
+                if post.image_name:
+                    post_key_names.append(post.image_name)
 
             aws.remove_images(post_key_names)
             aws.remove_profile_image(user.user_name)
             user.delete()
         else:
-            return JSONResponse.new(code=400, message='username {}, or password {} is incorrect'.format(resp_json.get('username'), resp_json.get('password')))
+            return JSONResponse.new(code=400, message='username {}, or password is incorrect'.format(resp_json.get('username')))
 
-        return JSONResponse.new(code=200, message='success', userid=user.user_id)
+        return JSONResponse.new(code=200, message='success', userid=user_id)
