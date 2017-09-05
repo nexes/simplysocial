@@ -170,6 +170,7 @@ class AuthUserCreate(View):
             new_user.email = request_json.get('email', '{}@noemail.set'.format(_user_name))
             new_user.about = request_json.get('about', '')
             new_user.last_login_date = timezone.now()
+            new_user.is_active = True
 
             if request_json.get('profilepic') is not None:
                 aws = AWS('snap-life')
@@ -180,9 +181,11 @@ class AuthUserCreate(View):
 
             try:
                 new_user.save()
+                request.session['{}'.format(new_user.user_id)] = True
             except IntegrityError as err:
                 # if this is because we have a collision with our random numbers
                 # hash, userID etc. re-create them
+                del request.session['{}'.format(new_user.user_id)]
                 return JSONResponse.new(code=500, message='username and email need to be unique')
 
         else:
