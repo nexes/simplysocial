@@ -296,3 +296,41 @@ class UserProfileUpdate(View):
         user.profile_url = url
         user.save(update_fields=['profile_url'])
         return JSONResponse.new(code=200, message='success', avatar=url)
+
+
+class UserSearch(View):
+    """ returns the username, avatar of the user if found.
+        apiendpoint/<user> this can be the username or a user name. 
+        returned JSON object {
+            'username': users username,
+            'avatar': the url to the users avatar
+        }
+    """
+    def get(self, request: HttpRequest, user_search: str):
+        # check if username was passed
+        user = Users.objects.filter(user_name__icontains=user_search)
+
+        if not user:
+            # check first name
+            [first, *last] = user_search.split(' ')
+
+            last_name = ''
+            for name in last:
+                last_name = ''.join([last_name, name, ' '])
+
+            user = Users.objects.filter(first_name__icontains=first)
+            if not user:
+                # check last name
+                user = Users.objects.filter(last_name__icontains=last_name)
+                if not user:
+                    return JSONResponse.new(code=400, message='couldn\'t find any users using: {}'.format(user_search))
+
+        found = []
+        for found_user in user:
+            found.append({
+                'username': found_user.user_name,
+                'avatar': found_user.profile_url
+            })
+
+        return JSONResponse.new(code=200, message='success', users=found)
+

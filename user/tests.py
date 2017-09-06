@@ -189,3 +189,52 @@ class UserFollowers(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()['followercount'], 1)
         print('\ttest_followers: removed one follower {}'.format(resp.json()['followercount']))
+
+
+@tag('usertest')
+class UserSearch(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.client = Client()
+
+    def _create_user(self, username: str, password: str, userid: int):
+        salt = 'blahfffff{}j349'.format(password)
+        signer = Signer(salt=salt)
+
+        user = Users()
+        user.user_id = userid
+        user.first_name = 'Billy'
+        user.last_name = 'Bobtest'
+        user.user_name = username
+        user.email = '{}@gmail.com'.format(username)
+        user.about = "This is about me and the things I like"
+        user.last_login_date = timezone.now()
+        user.password_hash = signer.signature(password)
+        user.salt_hash = salt
+        user.save()
+
+        return user
+
+    def test_search(self):
+        url = '/snaplife/api/user/search/user/'
+
+        jim = self._create_user('jim', 'txot', 1)
+        john = self._create_user('jim-jam', 'txot1', 2)
+        sally = self._create_user('sallbean', 'txot89', 3)
+
+        print('testing username search')
+        username_resp = self.client.get('{}{}/'.format(url, jim.user_name))
+
+        self.assertEqual(username_resp.status_code, 200)
+        self.assertEqual(len(username_resp.json()['users']), 2)
+        print('{} users found'.format(len(username_resp.json()['users'])))
+
+        print('testing last name search')
+        lastname_resp = self.client.get('{}{}/'.format(url, sally.last_name))
+
+        self.assertEqual(lastname_resp.status_code, 200)
+        self.assertEqual(len(lastname_resp.json()['users']), 3)
+        print('{} users found'.format(len(lastname_resp.json()['users'])))
+
