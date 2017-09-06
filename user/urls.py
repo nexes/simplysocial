@@ -26,5 +26,5 @@ urlpatterns = [
     url(r'^profile/update/$', UserProfileUpdate.as_view(), name='profileupdate'),
     url(r'^follow/new/$', UserFollowAdd.as_view(), name='newfollower'),
     url(r'^follow/remove/$', UserFollowRemove.as_view(), name='removefollower'),
-    url(r'^search/user/(?P<user_search>[a-zA-Z0-9]+)/$', UserSearch.as_view(), name='usersearch')
+    url(r'^search/user/(?P<user_search>[\W\w]+)/$', UserSearch.as_view(), name='usersearch')
 ]

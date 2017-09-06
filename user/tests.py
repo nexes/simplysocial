@@ -237,4 +237,3 @@ class UserSearch(TestCase):
         self.assertEqual(lastname_resp.status_code, 200)
         self.assertEqual(len(lastname_resp.json()['users']), 3)
         print('{} users found'.format(len(lastname_resp.json()['users'])))
-

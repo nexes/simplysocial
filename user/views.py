@@ -307,23 +307,27 @@ class UserSearch(View):
         }
     """
     def get(self, request: HttpRequest, user_search: str):
-        # check if username was passed
-        user = Users.objects.filter(user_name__icontains=user_search)
-
-        if not user:
-            # check first name
+        if ' ' in user_search:
             [first, *last] = user_search.split(' ')
 
             last_name = ''
             for name in last:
-                last_name = ''.join([last_name, name, ' '])
+                last_name = ''.join([last_name, name, ' '])    
 
             user = Users.objects.filter(first_name__icontains=first)
             if not user:
-                # check last name
                 user = Users.objects.filter(last_name__icontains=last_name)
                 if not user:
-                    return JSONResponse.new(code=400, message='couldn\'t find any users using: {}'.format(user_search))
+                    return JSONResponse.new(code=400, message='Couldn\'t find any users using: {}'.format(user_search))
+        else:
+            # no space separated words, let's assume it's either a username or a first or last name
+            user = Users.objects.filter(user_name__icontains=user_search)
+            if not user:
+                user = Users.objects.filter(first_name__icontains=user_search)
+                if not user:
+                    user = Users.objects.filter(last_name__icontains=user_search)
+                    if not user:
+                        return JSONResponse.new(code=400, message='Couldn\'t find any users using: {}'.format(user_search))
 
         found = []
         for found_user in user:
@@ -331,6 +335,4 @@ class UserSearch(View):
                 'username': found_user.user_name,
                 'avatar': found_user.profile_url
             })
-
         return JSONResponse.new(code=200, message='success', users=found)
-
