@@ -4,6 +4,10 @@ from django.db import models
 
 class Users(models.Model):
     """ Users table describing the user """
+
+    class Meta:
+        ordering = ['-user_name']
+
     user_id = models.IntegerField(unique=True)
     first_name = models.CharField(max_length=40, blank=False)
     last_name = models.CharField(max_length=40, blank=False)

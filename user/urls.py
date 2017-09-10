@@ -5,6 +5,7 @@ from user.views import (
     UserEmail,
     UserFollowAdd,
     UserFollowRemove,
+    UserFollowers,
     UserProfileUpdate,
     UserOnline,
     UserAccountSnapshot,
@@ -26,5 +27,6 @@ urlpatterns = [
     url(r'^profile/update/$', UserProfileUpdate.as_view(), name='profileupdate'),
     url(r'^follow/new/$', UserFollowAdd.as_view(), name='newfollower'),
     url(r'^follow/remove/$', UserFollowRemove.as_view(), name='removefollower'),
+    url(r'^follow/list/(?P<user_id>[0-9]+)/$', UserFollowers.as_view(), name='listfollower'),
     url(r'^search/user/(?P<user_search>[\W\w]+)/$', UserSearch.as_view(), name='usersearch')
 ]

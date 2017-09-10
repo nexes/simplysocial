@@ -10,13 +10,13 @@ from django.utils import timezone
 from django.views import View
 
 
-
 class UserCounts(View):
     """ request the following count
         /apiendpoint/posts/ - return the number of posts the user has made
         /apiendpoint/followers/ - return the number of people following the user
         /apiendpoint/following/ - return the number of people the user is following
     """
+
     def get(self, request: HttpRequest, user_id: int, count_type: str):
         try:
             user = Users.objects.get(user_id__exact=user_id)
@@ -35,11 +35,38 @@ class UserCounts(View):
         return JSONResponse.new(code=200, message='success', count=count)
 
 
+class UserFollowers(View):
+    """ return a list of the users followers
+        /apiendpoint/(userid) - the user id of the user we went to followers for.
+        
+        returned JSON object {
+            'username': the username of the follower,
+            'avatar': the url of the users avatar
+        }
+    """
+    def get(self, request: HttpRequest, user_id: str):
+        try:
+            user = Users.objects.get(user_id__exact=user_id)
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user {} is not found'.format(user_id))
+
+        follow_users = []
+        following = user.following.all()
+
+        for follower in following:
+            follow_users.append({
+                'username': follower.user_name,
+                'avatar': follower.profile_url
+            })
+
+        return JSONResponse.new(code=200, message='success', following=follow_users)
+
 
 class UserOnline(View):
     """ request if the user is online
         /apiendpoint/(username) - return true or false if this username is currently logged in
     """
+
     def get(self, request: HttpRequest, username: str):
         try:
             user = Users.objects.get(user_name__exact=username)
@@ -68,7 +95,6 @@ class UserOnline(View):
         return JSONResponse.new(code=200, message='success', loggedin=user.is_active, userid=uid)
 
 
-
 class UserAccountSnapshot(View):
     """ This is usefull instead of making several http calls
         request to get the the meta data of a users account
@@ -86,6 +112,7 @@ class UserAccountSnapshot(View):
             'startdate': users creation date
         }
     """
+
     def get(self, request: HttpRequest, user_id: int):
         try:
             user = Users.objects.get(user_id__exact=user_id)
@@ -121,6 +148,7 @@ class UserDescription(View):
             'description': 'a string that is the new description 0 < desciption < 255'
         }
     """
+
     def get(self, request: HttpRequest, user_id: int):
         try:
             user = Users.objects.get(user_id__exact=user_id)
@@ -149,7 +177,8 @@ class UserDescription(View):
         if len(new_desc) < 1 or len(new_desc) > 255:
             return JSONResponse.new(
                 code=400,
-                message='description doesn\'t meet the length requirements: {}'.format(len(new_desc))
+                message='description doesn\'t meet the length requirements: {}'.format(
+                    len(new_desc))
             )
 
         user.about = new_desc
@@ -168,6 +197,7 @@ class UserEmail(View):
             'email': the updated email address
         }
     """
+
     def get(self, request: HttpRequest, user_id: str):
         try:
             user = Users.objects.get(user_id__exact=user_id)
@@ -207,6 +237,7 @@ class UserFollowAdd(View):
             'followercount': the new follower count
         }
     """
+
     def post(self, request: HttpRequest):
         try:
             req_json = json.loads(request.body.decode('UTF-8'))
@@ -229,7 +260,6 @@ class UserFollowAdd(View):
         return JSONResponse.new(code=200, message='success', followercount=user.following.count())
 
 
-
 class UserFollowRemove(View):
     """ Remove a follower: user must be logged in to remove a followers
         required json object: {
@@ -240,6 +270,7 @@ class UserFollowRemove(View):
             'followercount': the new follower count
         }
     """
+
     def post(self, request: HttpRequest):
         try:
             req_json = json.loads(request.body.decode('UTF-8'))
@@ -251,7 +282,8 @@ class UserFollowRemove(View):
 
         try:
             user = Users.objects.get(user_id__exact=req_json.get('userid'))
-            follower = user.following.get(user_name__exact=req_json.get('username'))
+            follower = user.following.get(
+                user_name__exact=req_json.get('username'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
 
@@ -260,7 +292,6 @@ class UserFollowRemove(View):
         follower.save()
         user.save()
         return JSONResponse.new(code=200, message='success', followercount=user.following.count())
-
 
 
 class UserProfileUpdate(View):
@@ -273,6 +304,7 @@ class UserProfileUpdate(View):
             'url': the url for the profile picture. can be used inside <image>
         }
     """
+
     def post(self, request: HttpRequest):
         aws = AWS('snap-life')
 
@@ -289,7 +321,7 @@ class UserProfileUpdate(View):
         if request.session.get('{}'.format(req_json.get('userid')), False) is False:
             return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
 
-        #is there a better way?
+        # is there a better way?
         aws.remove_profile_image('{}.png'.format(user.user_name))
         url = aws.upload_profile_image('{}.png'.format(user.user_name), req_json.get('profilepic'))
 
@@ -306,13 +338,14 @@ class UserSearch(View):
             'avatar': the url to the users avatar
         }
     """
+
     def get(self, request: HttpRequest, user_search: str):
         if ' ' in user_search:
             [first, *last] = user_search.split(' ')
 
             last_name = ''
             for name in last:
-                last_name = ''.join([last_name, name, ' '])    
+                last_name = ''.join([last_name, name, ' '])
 
             user = Users.objects.filter(first_name__icontains=first)
             if not user:
