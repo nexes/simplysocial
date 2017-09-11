@@ -37,7 +37,7 @@ class UserCounts(View):
 
 class UserFollowers(View):
     """ return a list of the users followers
-        /apiendpoint/(userid) - the user id of the user we went to followers for.
+        /apiendpoint/(userid or username) - the user id or username of the user we went to followers for.
         
         returned JSON object {
             'username': the username of the follower,
@@ -46,9 +46,14 @@ class UserFollowers(View):
     """
     def get(self, request: HttpRequest, user_id: str):
         try:
+            # lets check userID first
             user = Users.objects.get(user_id__exact=user_id)
         except ObjectDoesNotExist:
-            return JSONResponse.new(code=400, message='user {} is not found'.format(user_id))
+            try:
+                # userID was not found, lets try username
+                user = Users.objects.get(user_name__exact=user_id)
+            except ObjectDoesNotExist:
+                return JSONResponse.new(code=400, message='user {} is not found'.format(user_id))
 
         follow_users = []
         following = user.following.all()
@@ -98,7 +103,7 @@ class UserOnline(View):
 class UserAccountSnapshot(View):
     """ This is usefull instead of making several http calls
         request to get the the meta data of a users account
-        /apiendpoint/(username)
+        /apiendpoint/(userid)
 
         returned JSON object: {
             'firstname': users first name,
@@ -248,8 +253,8 @@ class UserFollowAdd(View):
             return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
 
         try:
-            user = Users.objects.get(user_id__exact=req_json['userid'])
-            follower = Users.objects.get(user_name__exact=req_json['username'])
+            user = Users.objects.get(user_id__exact=req_json.get('userid'))
+            follower = Users.objects.get(user_name__exact=req_json.get('username'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
 
@@ -257,7 +262,11 @@ class UserFollowAdd(View):
         follower.follower_count += 1
         follower.save()
         user.save()
-        return JSONResponse.new(code=200, message='success', followercount=user.following.count())
+        return JSONResponse.new(code=200,
+                                message='success',
+                                followcount=user.following.count(),
+                                followname=follower.user_name,
+                                followavatar=follower.profile_url)
 
 
 class UserFollowRemove(View):
