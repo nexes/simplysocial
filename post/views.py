@@ -44,6 +44,8 @@ class PostCreate(View):
         #create new post and assign to the user
         new_post = Posts()
         new_post.post_id = uuid4().time_mid
+        new_post.author_username = user.user_name
+        new_post.author_profile_url = user.profile_url
 
         if req_json.get('image', None) is not None:
             image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
@@ -67,7 +69,9 @@ class PostCreate(View):
             'views': new_post.view_count,
             'likes': new_post.like_count,
             'imageurl': new_post.image_url,
-            'date': new_post.creation_date.isoformat()
+            'date': new_post.creation_date.isoformat(),
+            'author': new_post.author_username,
+            'authoravatar': new_post.author_profile_url
         })
         return JSONResponse.new(code=200, message='success', post=p)
 
@@ -225,7 +229,7 @@ class PostSearchTitle(View):
 
 class PostSearchUser(View):
     """ return posts from the user
-        GET: search for the users posts, this will include shared posts
+        GET: search for the users posts, this will include shared posts from following
 
         returned json object: {
             'code': http status_code,
@@ -251,10 +255,14 @@ class PostSearchUser(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} is not found'.format(userid))
 
-        posts = user.posts_set.all()[:count]
+        posts = user.posts_set.all()
         post_list = []
 
-        for post in posts:
+        for follow in user.following.all():
+            following_posts = follow.posts_set.all()
+            posts = posts | following_posts
+
+        for post in posts[:count]:
             p = dict({
                 'postid': post.post_id,
                 'message': post.message,
@@ -262,7 +270,9 @@ class PostSearchUser(View):
                 'views': post.view_count,
                 'likes': post.like_count,
                 'imageurl': post.image_url,
-                'date': post.creation_date.isoformat()
+                'date': post.creation_date.isoformat(),
+                'author': post.author_username,
+                'authoravatar': post.author_profile_url
             })
             post_list.append(p)
 

@@ -262,6 +262,7 @@ class UserFollowAdd(View):
         follower.follower_count += 1
         follower.save()
         user.save()
+
         return JSONResponse.new(code=200,
                                 message='success',
                                 followcount=user.following.count(),
@@ -336,6 +337,11 @@ class UserProfileUpdate(View):
 
         user.profile_url = url
         user.save(update_fields=['profile_url'])
+
+        for post in user.posts_set.all():
+            post.author_profile_url = url
+            post.save()
+
         return JSONResponse.new(code=200, message='success', avatar=url)
 
 
