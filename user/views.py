@@ -256,7 +256,7 @@ class UserFollowAdd(View):
             user = Users.objects.get(user_id__exact=req_json.get('userid'))
             follower = Users.objects.get(user_name__exact=req_json.get('username'))
         except ObjectDoesNotExist:
-            return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
+            return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json.get('userid'), req_json.get('username')))
 
         user.following.add(follower)
         follower.follower_count += 1
