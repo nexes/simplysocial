@@ -100,10 +100,71 @@ class UserOnline(View):
         return JSONResponse.new(code=200, message='success', loggedin=user.is_active, userid=uid)
 
 
+
+class UserFriendSnapshot(View):
+    """ This is similar to UserAccountSnapshot but for those a user is following (or may follow)
+        return the requested users posts, account counts
+        GET: /apiendpoint/(username)
+
+        returned JSON object: {
+            'about': the users account description,
+            'postcount': the number of posts by the user,
+            'following': the number of people the ueser is following,
+            'followers': the number of people following the user,
+            'avatar': the url to the users avatar,
+            'posts': a list of the users posts {
+                'message': the post message,
+                'url': the url to the message image if there is one,
+                'date': the date of the post,
+                'likes': the posts like count
+            },
+            following: a list of who the user is following {
+                'username': the users username,
+                'avatar': the url to the users avatar
+            }
+        }
+    """
+
+    def get(self, request: HttpRequest, username: str):
+        try:
+            user = Users.objects.get(user_name__exact=username)
+            posts = user.posts_set.all()
+        except ObjectDoesNotExist:
+            return JSONResponse.new(code=400, message='user {} was not found'.format(username))
+
+        post_list = []
+        for post in posts:
+            post_list.append({
+                'message': post.message,
+                'url': post.image_url,
+                'date': post.creation_date.isoformat(),
+                'likes': post.like_count
+            })
+        
+        following_list = []
+        for follow_user in user.following.all():
+            following_list.append({
+                'username': follow_user.user_name,
+                'avatar': follow_user.profile_url
+            })
+
+        return JSONResponse.new(
+            code=200,
+            message='success',
+            about=user.about,
+            postcount=posts.count(),
+            following=user.following.count(),
+            followers=user.follower_count,
+            avatar=user.profile_url,
+            posts=post_list,
+            followinglist=following_list
+        )
+
+
 class UserAccountSnapshot(View):
     """ This is usefull instead of making several http calls
         request to get the the meta data of a users account
-        /apiendpoint/(userid)
+        GET: /apiendpoint/(userid)
 
         returned JSON object: {
             'firstname': users first name,

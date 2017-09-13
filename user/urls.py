@@ -9,6 +9,7 @@ from user.views import (
     UserProfileUpdate,
     UserOnline,
     UserAccountSnapshot,
+    UserFriendSnapshot,
     UserSearch
 )
 from django.conf.urls import url
@@ -22,6 +23,7 @@ urlpatterns = [
     url(r'^email/(?P<user_id>[0-9]+)/$', UserEmail.as_view(), name='get_email'),
     url(r'^online/(?P<username>[a-zA-Z0-9]+)/$', UserOnline.as_view(), name='online'),
     url(r'^account/snapshot/(?P<user_id>[0-9]+)/$', UserAccountSnapshot.as_view(), name='snapshot'),
+    url(r'^friend/snapshot/(?P<username>[a-zA-Z0-9]+)/$', UserFriendSnapshot.as_view(), name='friendsnapshot'),
     url(r'^email/$', UserEmail.as_view(), name='set_email'),
     url(r'^description/$', UserDescription.as_view(), name='set_description'),
     url(r'^profile/update/$', UserProfileUpdate.as_view(), name='profileupdate'),
