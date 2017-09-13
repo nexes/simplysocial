@@ -178,6 +178,8 @@ class AuthUserCreate(View):
                 url = aws.upload_profile_image(new_user.user_name, key_name)
 
                 new_user.profile_url = url
+            else:
+                new_user.profile_url = 'assets/usericon.png'
 
             try:
                 new_user.save()
