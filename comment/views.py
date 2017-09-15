@@ -42,6 +42,7 @@ class CommentCreate(View):
         comment = Comments()
         comment.comment_id = uuid4().time_mid
         comment.author_id = user.user_id
+        comment.author_name = user.user_name
         comment.message = message
         comment.save()
         post.comments_set.add(comment)

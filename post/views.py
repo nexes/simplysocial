@@ -263,6 +263,16 @@ class PostSearchUser(View):
             posts = posts | following_posts
 
         for post in posts[:count]:
+            comment_list = []
+            comments = post.comments_set.all()
+
+            for comment in comments:
+                comment_list.append({
+                    'message': comment.message,
+                    'author': comment.author_name,
+                    'date': comment.creation_date.isoformat()
+                })
+
             p = dict({
                 'postid': post.post_id,
                 'message': post.message,
@@ -272,7 +282,8 @@ class PostSearchUser(View):
                 'imageurl': post.image_url,
                 'date': post.creation_date.isoformat(),
                 'author': post.author_username,
-                'authoravatar': post.author_profile_url
+                'authoravatar': post.author_profile_url,
+                'comments': comment_list
             })
             post_list.append(p)
 

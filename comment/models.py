@@ -8,6 +8,7 @@ class Comments(models.Model):
 
     comment_id = models.IntegerField(unique=True, blank=False)
     author_id = models.IntegerField(blank=False)
+    author_name = models.CharField(blank=False, max_length=40)
     creation_date = models.DateField(auto_now_add=True)
     message = models.CharField(max_length=255, blank=False)
     like_count = models.IntegerField(default=0)
