@@ -47,7 +47,7 @@ class PostCreate(View):
         new_post.author_username = user.user_name
         new_post.author_profile_url = user.profile_url
 
-        if req_json.get('image', None) is not None:
+        if req_json.get('image', None) is not None and len(req_json.get('image', '')) > 0 :
             image_name = '{}{}.png'.format(user.user_id, new_post.post_id)
             url = S3.upload_image(image_name, req_json.get('image'))
 
@@ -71,7 +71,8 @@ class PostCreate(View):
             'imageurl': new_post.image_url,
             'date': new_post.creation_date.isoformat(),
             'author': new_post.author_username,
-            'authoravatar': new_post.author_profile_url
+            'authoravatar': new_post.author_profile_url,
+            'comments': []
         })
         return JSONResponse.new(code=200, message='success', post=p)
 
