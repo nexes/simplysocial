@@ -6,7 +6,6 @@ from lifesnap.util import JSONResponse
 
 from user.models import Users
 from post.models import Posts
-from comment.models import Comments
 from django.views import View
 from django.conf import settings
 from django.core.mail import send_mail
@@ -428,7 +427,14 @@ class PostReport(View):
         )
         send_mail(
             'Report for post ID {}, post name {}'.format(post.post_id, post.image_name),
-            'Reported by {}\nReport count: {}'.format(req_json.get('email'), post.report_count),
+            'Reported by {}\nReport count: {}\nMessage: {}\n Author: {}\nURL: {}'.format(
+                req_json.get('email'),
+                post.report_count,
+                post.message,
+                post.author_username,
+                post.image_url
+            ),
+
             settings.EMAIL_HOST_USER,
             [settings.EMAIL_HOST_USER],
             fail_silently=True

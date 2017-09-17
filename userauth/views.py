@@ -94,6 +94,7 @@ class AuthUserLogoff(View):
             'userid': the user id of the now logged off user
         }
     """
+
     def post(self, request: HttpRequest):
         try:
             request_json = json.loads(request.body.decode('UTF-8'))
