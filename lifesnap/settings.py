@@ -21,22 +21,31 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
-with open('supertopsecretprivatesettings.json') as f:
-    try:
-        SETTINGS = json.load(f)
-    except FileNotFoundError as err:
-        print('Settings file not found: {}'.format(err))
-    except json.JSONDecodeError as err:
-        print('JSONDecoder error: {}'.format(err))
-    else:
-        SECRET_KEY = SETTINGS['SECRET_KEY']
-        DEBUG = SETTINGS['DEBUG']
-        ALLOWED_HOSTS = SETTINGS['ALLOWED_HOSTS']
-        EMAIL_HOST = SETTINGS['EMAIL_HOST']
-        EMAIL_HOST_USER = SETTINGS['EMAIL_USER']
-        EMAIL_HOST_PASSWORD = SETTINGS['EMAIL_PASSWORD']
-        EMAIL_PORT = SETTINGS['EMAIL_PORT']
-        EMAIL_USE_TLS = SETTINGS['EMAIL_TLS']
+try:
+    with open('supertopsecretprivatesettings.json') as f:
+        try:
+            SETTINGS = json.load(f)
+        except json.JSONDecodeError as err:
+            print('JSONDecoder error: {}'.format(err))
+        else:
+            SECRET_KEY = SETTINGS['SECRET_KEY']
+            DEBUG = SETTINGS['DEBUG']
+            ALLOWED_HOSTS = SETTINGS['ALLOWED_HOSTS']
+            EMAIL_HOST = SETTINGS['EMAIL_HOST']
+            EMAIL_HOST_USER = SETTINGS['EMAIL_USER']
+            EMAIL_HOST_PASSWORD = SETTINGS['EMAIL_PASSWORD']
+            EMAIL_PORT = SETTINGS['EMAIL_PORT']
+            EMAIL_USE_TLS = SETTINGS['EMAIL_TLS']
+except FileNotFoundError:
+    # our file is not found, we may be deployed and env variables may be set
+    SECRET_KEY = os.getenv('SECRET_KEY', '')
+    DEBUG = os.getenv('DEBUG', '')
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '')
+    EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+    EMAIL_HOST_USER = os.getenv('EMAIL_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
+    EMAIL_PORT = os.getenv('EMAIL_PORT', '')
+    EMAIL_USE_TLS = os.getenv('EMAIL_TLS', '')
 
 
 # Application definition
