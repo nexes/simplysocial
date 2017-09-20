@@ -101,10 +101,10 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DJANGO_DB_NAME'),
-        'USER': os.environ.get('DJANGO_DB_USER'),
-        'PASSWORD': os.environ.get('DJANGO_DB_PASSWORD'),
-        'HOST': 'localhost'
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'HOST': 'db',
+        'PORT': '5432'
     }
 }
 
