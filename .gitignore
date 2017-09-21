@@ -3,8 +3,6 @@
 **/.DS_Store
 **/*.pyc
 
-djangovars.env
-
 supertopsecretprivatesettings.json
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

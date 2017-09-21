@@ -108,6 +108,11 @@ DATABASES = {
     }
 }
 
+# if we are deployed, we set our database vars this way
+
+if SETTINGS['DEPLOY']:
+    import dj_database_url
+    DATABASES['default'] = dj_database_url.config()
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
