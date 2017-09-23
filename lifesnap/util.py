@@ -8,6 +8,7 @@ class JSONResponse(object):
         """ return a new Json Response """
         resp = JsonResponse({})
         resp.status_code = code
+
         payload = dict({
             'message': message
         })

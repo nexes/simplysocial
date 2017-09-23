@@ -30,6 +30,7 @@ try:
         else:
             SECRET_KEY = SETTINGS['SECRET_KEY']
             DEBUG = SETTINGS['DEBUG']
+            DEPLOY = SETTINGS['DEPLOY']
             ALLOWED_HOSTS = SETTINGS['ALLOWED_HOSTS']
             EMAIL_HOST = SETTINGS['EMAIL_HOST']
             EMAIL_HOST_USER = SETTINGS['EMAIL_USER']
@@ -40,6 +41,7 @@ except FileNotFoundError:
     # our file is not found, we may be deployed and env variables may be set
     SECRET_KEY = os.getenv('SECRET_KEY', '')
     DEBUG = os.getenv('DEBUG', '')
+    DEPLOY = os.getcwd('DEPLOY', False)
     ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '')
     EMAIL_HOST = os.getenv('EMAIL_HOST', '')
     EMAIL_HOST_USER = os.getenv('EMAIL_USER', '')
@@ -55,6 +57,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'post.apps.PostConfig',
     'comment.apps.CommentConfig',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -66,11 +69,21 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_WHITELIST = [
+    'lifesnap-frontend.herokuapp.com'
+]
+CSRF_TRUSTED_ORIGINS = [
+    'lifesnap-frontend.herokuapp.com'
 ]
 
 ROOT_URLCONF = 'lifesnap.urls'

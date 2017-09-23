@@ -1,4 +1,5 @@
 Django==1.11.2
 psycopg2
 dj-database-url
+django-cors-headers
 boto3
