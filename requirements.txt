@@ -3,3 +3,4 @@ psycopg2
 dj-database-url
 django-cors-headers
 boto3
+whitenoise

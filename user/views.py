@@ -38,7 +38,7 @@ class UserCounts(View):
 class UserFollowers(View):
     """ return a list of the users followers
         /apiendpoint/(userid or username) - the user id or username of the user we went to followers for.
-        
+
         returned JSON object {
             'username': the username of the follower,
             'avatar': the url of the users avatar
@@ -140,7 +140,7 @@ class UserFriendSnapshot(View):
                 'date': post.creation_date.isoformat(),
                 'likes': post.like_count
             })
-        
+
         following_list = []
         for follow_user in user.following.all():
             following_list.append({
@@ -408,7 +408,7 @@ class UserProfileUpdate(View):
 
 class UserSearch(View):
     """ returns the username, avatar of the user if found.
-        apiendpoint/<user> this can be the username or a user name. 
+        apiendpoint/<user> this can be the username or a user name.
         returned JSON object {
             'username': users username,
             'avatar': the url to the users avatar

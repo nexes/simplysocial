@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'post.apps.PostConfig',
     'comment.apps.CommentConfig',
+    'home.apps.HomeConfig',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -68,22 +69,23 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = [
-    'lifesnap-frontend.herokuapp.com'
+    # 'lifesnap-frontend.herokuapp.com'
 ]
 CSRF_TRUSTED_ORIGINS = [
-    'lifesnap-frontend.herokuapp.com'
+    # 'lifesnap-frontend.herokuapp.com'
 ]
 
 ROOT_URLCONF = 'lifesnap.urls'
@@ -164,3 +166,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, '../dist')
+]

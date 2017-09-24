@@ -16,6 +16,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 
+
 class EnsureCSRFToken(View):
     """ Since this is an API endpoint only backend, we are not rendering any templates, no HTML is being returned
         Because of this, if the client doesn't already have our csrftoken set in their cookie they will receive a
@@ -46,6 +47,7 @@ class AuthUserLogin(View):
         challenge_hash = signer.signature(pass_check)
 
         return user_pass_hash == challenge_hash
+
 
     def post(self, request: HttpRequest):
         try:
