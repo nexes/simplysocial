@@ -1,8 +1,7 @@
 import base64
 import binascii
 import boto3
-import json
-# import botocore
+
 
 
 class AWS(object):
@@ -24,7 +23,7 @@ class AWS(object):
             raise ValueError('b64_bytes byte size is 0')
 
         try:
-            #is this part necessary?
+            # is this part necessary?
             b64_bytes = bytes(b64_bytes, encoding='utf-8')
             image_bytes = base64.b64decode(b64_bytes)
         except binascii.Error as err:

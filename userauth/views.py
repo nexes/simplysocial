@@ -182,7 +182,7 @@ class AuthUserCreate(View):
 
                 new_user.profile_url = url
             else:
-                new_user.profile_url = 'assets/usericon.png'
+                new_user.profile_url = 'static/assets/usericon.png'
 
             try:
                 new_user.save()

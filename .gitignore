@@ -1,4 +1,5 @@
 /.vscode/
+/.aws/
 **/static/
 
 **/.DS_Store
