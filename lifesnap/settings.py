@@ -113,18 +113,18 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+# database setup for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'HOST': 'db',
+        'NAME': 'snaplife',
+        'USER': 'joe',
+        'HOST': 'localhost',
         'PORT': '5432'
     }
 }
 
 # if we are deployed, we set our database vars this way
-
 if SETTINGS['DEPLOY']:
     import dj_database_url
     DATABASES['default'] = dj_database_url.config()
