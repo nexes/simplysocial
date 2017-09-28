@@ -110,7 +110,10 @@ class AuthUserLogoff(View):
 
         user.is_active = False
         user.save()
-        del request.session['{}'.format(user.user_id)]
+        try:
+            del request.session['{}'.format(user.user_id)]
+        except KeyError:
+            pass
         return JSONResponse.new(code=200, message='success', userid=user.user_id)
 
 

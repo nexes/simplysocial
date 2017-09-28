@@ -26,9 +26,6 @@ class CommentCreate(View):
         except json.JSONDecodeError:
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
-        if request.session.get('{}'.format(req_json.get('userid')), False) is False:
-            return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json.get('userid')))
-
         message = req_json.get('message')
         if message is None or len(message) > 255:
             return JSONResponse.new(code=400, message='message bad data: {}'.format(message))
@@ -38,6 +35,9 @@ class CommentCreate(View):
             user = Users.objects.get(user_id__exact=req_json.get('userid'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='post {} or user {} was not found'.format(req_json.get('postid'), req_json.get('userid')))
+
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         comment = Comments()
         comment.comment_id = uuid4().time_mid
@@ -69,8 +69,8 @@ class CommentDelete(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user {} or comment {} is not found'.format(req_json.get('userid'), req_json.get('commentid')))
 
-        if request.session.get('{}'.format(user.user_id), False) is False:
-            return JSONResponse.new(code=400, message='user {} is not signed in'.format(user.user_id))
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         if user.user_id != comment.author_id:
             return JSONResponse.new(code=400, message='user {} is not the authoer of comment {}'.format(user.user_id, comment.author_id))
@@ -115,8 +115,8 @@ class CommentLike(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} or commentid {} is not found'.format(req_json.get('userid'), req_json.get('commentid')))
 
-        if request.session.get('{}'.format(user.user_id), False) is False:
-            return JSONResponse.new(code=400, message='user {} is not logged in'.format(user.user_id))
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         comment.like_count += 1
         comment.save()

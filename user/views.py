@@ -78,20 +78,16 @@ class UserOnline(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user name {} is not found'.format(username))
 
-        # if there is no session data, the user is either not logged in, or is accessing from outside the original session.
-        # either way, a log in is required here
-        if request.session.get('{}'.format(user.user_id), False) is False:
-            user.is_active = False
-            user.save()
-            return JSONResponse.new(code=200, message='success', loggedin=False, userid=0)
-
         # If the user is still showing active after 24 hours, log the user off.
         uid = user.user_id
         now = timezone.now()
         delta_time = (now - user.last_login_date).total_seconds()
-        if ((delta_time / 3600) / 24) >= 1:
+        if ((delta_time / 3600) / 24) >= 1 and user.is_active:
             if '{}'.format(user.user_id) in request.session:
-                del request.session['{}'.format(user.user_id)]
+                try:
+                    del request.session['{}'.format(user.user_id)]
+                except KeyError:
+                    pass
 
             user.is_active = False
             uid = 0
@@ -185,7 +181,7 @@ class UserAccountSnapshot(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(user_id))
 
-        if request.session.get('{}'.format(user.user_id), False) is False:
+        if user.is_active is False:
             return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         post_count = user.posts_set.count()
@@ -235,8 +231,7 @@ class UserDescription(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='bad user id {}, user not found'.format(req_json.get('userid')))
 
-        # user must be signed in to update the profile description
-        if request.session.get('{}'.format(user.user_id), False) is False:
+        if user.is_active is False:
             return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         new_desc = req_json.get('description', '')
@@ -310,14 +305,14 @@ class UserFollowAdd(View):
         except json.JSONDecodeError:
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
-        if request.session.get('{}'.format(req_json.get('userid')), False) is False:
-            return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
-
         try:
             user = Users.objects.get(user_id__exact=req_json.get('userid'))
             follower = Users.objects.get(user_name__exact=req_json.get('username'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json.get('userid'), req_json.get('username')))
+
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         user.following.add(follower)
         follower.follower_count += 1
@@ -348,15 +343,14 @@ class UserFollowRemove(View):
         except json.JSONDecodeError:
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
-        if request.session.get('{}'.format(req_json.get('userid')), False) is False:
-            return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
-
         try:
             user = Users.objects.get(user_id__exact=req_json.get('userid'))
-            follower = user.following.get(
-                user_name__exact=req_json.get('username'))
+            follower = user.following.get(user_name__exact=req_json.get('username'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} or username {} not found'.format(req_json['userid'], req_json['username']))
+
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         follower.follower_count -= 1
         user.following.remove(follower)
@@ -389,8 +383,8 @@ class UserProfileUpdate(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user {} is not found'.format(req_json.get('userid')))
 
-        if request.session.get('{}'.format(req_json.get('userid')), False) is False:
-            return JSONResponse.new(code=400, message='user {} is not signed in'.format(req_json['userid']))
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         # is there a better way?
         aws.remove_profile_image('{}.png'.format(user.user_name))

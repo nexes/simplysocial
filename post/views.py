@@ -36,9 +36,8 @@ class PostCreate(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='user id {} is not found.'.format(req_json['userid']))
 
-        #only signed in users can create posts
-        if request.session.get('{}'.format(user.user_id), False) is False:
-            return JSONResponse.new(code=400, message='user is not signed in')
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         #create new post and assign to the user
         new_post = Posts()
@@ -99,9 +98,8 @@ class PostDelete(View):
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message="userid {} is not found".format(req_json['userid']))
 
-        #check user is logged in via sessions
-        if request.session.get('{}'.format(user.user_id), False) is False:
-            return JSONResponse.new(code=400, message='user is not signed in')
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         try:
             if req_json.get('postid'):
@@ -141,14 +139,14 @@ class PostUpdate(View):
         except json.JSONDecodeError:
             return JSONResponse.new(code=400, message='request decode error, bad data sent to the server')
 
-        if request.session.get('{}'.format(req_json['userid']), False) is False:
-            return JSONResponse.new(code=400, message='userid {} is not logged in to update post {}'.format(req_json['userid'], req_json['postid']))
-
         try:
             user = Users.objects.get(user_id__exact=req_json['userid'])
             post = user.posts_set.get(post_id__exact=req_json['postid'])
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='userid {} or postid {} was not found'.format(req_json['userid'], req_json['postid']))
+
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         new_title = req_json.get('title')
         new_message = req_json.get('message')
@@ -380,13 +378,13 @@ class PostLike(View):
             return JSONResponse.new(code=400, message='json decode error, bad data sent to the server')
 
         try:
+            user = Users.objects.get(user_id__exact=req_json.get('userid'))
             post = Posts.objects.get(post_id__exact=req_json.get('postid'))
         except ObjectDoesNotExist:
             return JSONResponse.new(code=400, message='postid {} is not found'.format(req_json.get('postid')))
 
-        user_id = req_json.get('userid')
-        if request.session.get('{}'.format(user_id), False) is False:
-            return JSONResponse.new(code=400, message='user {} is not logged in'.format(user_id))
+        if user.is_active is False:
+            return JSONResponse.new(code=400, message='user id {} must be logged in'.format(user.user_id))
 
         post.like_count += 1
         post.save(update_fields=['like_count'])

@@ -80,13 +80,8 @@ MIDDLEWARE = [
 ]
 
 
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
-CORS_ORIGIN_WHITELIST = [
-    # 'lifesnap-frontend.herokuapp.com'
-]
-CSRF_TRUSTED_ORIGINS = [
-    # 'lifesnap-frontend.herokuapp.com'
-]
 
 ROOT_URLCONF = 'lifesnap.urls'
 
