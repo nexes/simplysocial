@@ -1,6 +1,8 @@
 # Messaging Backend API
 ### built using Django
 
+To see an example of this being used, go to [hiveposts](https://www.hiveposts.com)
+
 With this backend, you can use the following API endpoints to create and delete users. Have users create new posts with images and text and create comments to user posts. Images are stored using [AWS S3](https://aws.amazon.com/s3/). This can be used for a rudimentary messaging or social media application. All URL inputs and outputs are require and return JSON objects.
 
 The project uses a json file holding the projects secret key and other project level variables used in the settings.py file. For obvious reasons this file is not commited with the project. You will need to create your own.
